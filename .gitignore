@@ -1,0 +1,44 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# PHP
+vendor/
+composer.lock
+.php-cs-fixer.cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Sistema operativo
+Thumbs.db
+.directory
+
+# Logs y bases de datos temporales
+*.log
+*.sql
+!database/schema_*.sql
+!database/crear_*.sql
+!database/estructura_*.sql
+
+# Archivos temporales
+tmp/
+temp/
+cache/
+
+# Node modules (si es necesario)
+node_modules/
+package-lock.json
+
+# Session files
+session/
+
+# Build output
+dist/
+build/
