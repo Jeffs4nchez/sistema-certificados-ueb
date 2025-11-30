@@ -1,0 +1,49 @@
+# Archivos de texto
+* text=auto
+
+# PHP
+*.php text eol=lf
+*.phtml text eol=lf
+
+# JavaScript
+*.js text eol=lf
+*.jsx text eol=lf
+
+# CSS/SCSS
+*.css text eol=lf
+*.scss text eol=lf
+*.sass text eol=lf
+
+# HTML/Templates
+*.html text eol=lf
+*.tpl text eol=lf
+*.blade text eol=lf
+
+# SQL
+*.sql text eol=lf
+
+# JSON
+*.json text eol=lf
+
+# Markdown
+*.md text eol=lf
+*.markdown text eol=lf
+
+# Configuración
+*.yml text eol=lf
+*.yaml text eol=lf
+.htaccess text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# CSV
+*.csv text eol=lf
+
+# Archivos binarios
+*.jar binary
+*.jpg binary
+*.gif binary
+*.png binary
+*.zip binary
+*.gzip binary
+*.db binary
