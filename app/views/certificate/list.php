@@ -69,6 +69,7 @@
                                                 onclick="openLiquidacionModal(<?php echo $cert['id']; ?>)">
                                             <i class="fas fa-file-invoice-dollar"></i>
                                         </button>
+                                        <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
                                         <a href="index.php?action=certificate-edit&id=<?php echo $cert['id']; ?>" 
                                            class="btn btn-sm btn-outline-secondary" title="Editar">
                                             <i class="fas fa-edit"></i>
@@ -80,6 +81,7 @@
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -103,14 +105,6 @@
                 <div id="liquidacionContent">
                     <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</p>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-                <button type="button" class="btn btn-success" onclick="saveAllLiquidaciones()">
-                    <i class="fas fa-save"></i> Guardar
-                </button>
             </div>
         </div>
     </div>
@@ -138,10 +132,11 @@ async function openLiquidacionModal(certificateId) {
                                 <th style="width: 8%;">ITEM</th>
                                 <th style="width: 10%;">Descripción</th>
                                 <th style="width: 12%;">Monto</th>
-                                <th style="width: 30%;">Liquidación</th>
+                                <th style="width: 15%;">Liquidación</th>
+                                <th style="width: 8%;">Acción</th>
                             </tr>
                         </thead>
-                        <tbody id="liquidacionTableBody">
+                        <tbody>
             `;
             
             result.data.forEach(item => {
@@ -155,9 +150,20 @@ async function openLiquidacionModal(certificateId) {
                         <td><small>${item.descripcion_item}</small></td>
                         <td class="text-end">$ ${parseFloat(item.monto).toFixed(2)}</td>
                         <td>
-                            <input type="number" class="form-control form-control-sm liquidacion-input" 
-                                   value="${parseFloat(item.cantidad_liquidacion || 0).toFixed(2)}"
-                                   data-detalle-id="${item.id}" step="0.01" min="0">
+                            <div class="input-group input-group-sm">
+                                <input type="number" class="form-control form-control-sm liquidacion-input" 
+                                       value="${parseFloat(item.cantidad_liquidacion || 0).toFixed(2)}"
+                                       data-detalle-id="${item.id}" step="0.01" min="0">
+                                <button class="btn btn-sm btn-outline-success" type="button"
+                                        onclick="saveLiquidacion(${item.id}, this)">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="clearLiquidacion(${item.id}, this)" title="Limpiar">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -180,64 +186,43 @@ async function openLiquidacionModal(certificateId) {
     }
 }
 
-async function saveAllLiquidaciones() {
-    const inputs = document.querySelectorAll('.liquidacion-input');
-    const liquidaciones = [];
-    
-    // Recolectar solo las liquidaciones con valores ingresados
-    inputs.forEach(input => {
-        const cantidad = parseFloat(input.value) || 0;
-        if (cantidad > 0) {  // Solo guardar si hay un valor
-            liquidaciones.push({
-                detalle_id: input.dataset.detalleId,
-                cantidad_liquidacion: cantidad
-            });
-        }
-    });
-    
-    // Verificar que al menos una liquidación fue ingresada
-    if (liquidaciones.length === 0) {
-        alert('⚠️ Por favor ingresa al menos una liquidación');
-        return;
-    }
+async function saveLiquidacion(detalleId, button) {
+    const input = button.previousElementSibling;
+    const cantidadLiquidacion = parseFloat(input.value) || 0;
     
     try {
-        const saveButton = event.target;
-        saveButton.disabled = true;
-        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        const formData = new FormData();
+        formData.append('detalle_id', detalleId);
+        formData.append('cantidad_liquidacion', cantidadLiquidacion);
         
-        // Guardar cada liquidación
-        for (const liquidacion of liquidaciones) {
-            const formData = new FormData();
-            formData.append('detalle_id', liquidacion.detalle_id);
-            formData.append('cantidad_liquidacion', liquidacion.cantidad_liquidacion);
-            
-            const response = await fetch('index.php?action=api-certificate&action-api=update-liquidacion', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            
-            if (!result.success) {
-                throw new Error(result.message || 'Error desconocido al guardar liquidación');
-            }
+        const response = await fetch('index.php?action=api-certificate&action-api=update-liquidacion', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            button.innerHTML = '<i class="fas fa-check text-success"></i>';
+            setTimeout(() => {
+                button.innerHTML = '<i class="fas fa-save"></i>';
+            }, 2000);
+            alert('✓ Liquidación actualizada correctamente');
+        } else {
+            alert('Error: ' + result.message);
         }
-        
-        // Cerrar modal y mostrar mensaje de éxito
-        const modal = bootstrap.Modal.getInstance(document.getElementById('liquidacionModal'));
-        modal.hide();
-        
-        alert('✓ Liquidaciones guardadas correctamente');
-        
-        // Recargar la página para actualizar datos
-        location.reload();
-        
     } catch (error) {
         alert('Error: ' + error.message);
-        const saveButton = event.target;
-        saveButton.disabled = false;
-        saveButton.innerHTML = '<i class="fas fa-save"></i> Guardar';
+    }
+}
+
+async function clearLiquidacion(detalleId, button) {
+    if (confirm('¿Limpiar la liquidación de este item?')) {
+        const row = button.closest('tr');
+        const input = row.querySelector('.liquidacion-input');
+        input.value = '0';
+        const saveButton = row.querySelector('button');
+        await saveLiquidacion(detalleId, saveButton);
     }
 }
 </script>

@@ -11,9 +11,11 @@
             <small class="text-muted">Gestión de presupuesto importado</small>
         </div>
         <div class="col-md-4 text-end">
+            <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
             <a href="index.php?action=presupuesto-upload" class="btn btn-primary btn-sm">
                 <i class="fas fa-upload"></i> Importar CSV
             </a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -86,14 +88,11 @@
                         <select class="form-select form-select-sm" id="filterPrograma">
                             <option value="">Código Programa</option>
                             <?php 
-                            $programas = array();
-                            foreach ($items as $item) {
-                                $programas[$item['codigog1']] = $item['descripciong1'];
-                            }
-                            ksort($programas);
-                            foreach ($programas as $code => $desc): ?>
-                                <option value="<?php echo htmlspecialchars($code); ?>">
-                                    <?php echo htmlspecialchars($code) . ' - ' . htmlspecialchars($desc); ?>
+                            $programas = array_unique(array_column($items, 'codigog1'));
+                            sort($programas);
+                            foreach ($programas as $prog): ?>
+                                <option value="<?php echo htmlspecialchars($prog); ?>">
+                                    <?php echo htmlspecialchars($prog); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -106,14 +105,11 @@
                         <select class="form-select form-select-sm" id="filterActividad">
                             <option value="">Código Actividad</option>
                             <?php 
-                            $actividades = array();
-                            foreach ($items as $item) {
-                                $actividades[$item['codigog2']] = $item['descripciong2'];
-                            }
-                            ksort($actividades);
-                            foreach ($actividades as $code => $desc): ?>
-                                <option value="<?php echo htmlspecialchars($code); ?>">
-                                    <?php echo htmlspecialchars($code) . ' - ' . htmlspecialchars($desc); ?>
+                            $actividades = array_unique(array_column($items, 'codigog2'));
+                            sort($actividades);
+                            foreach ($actividades as $act): ?>
+                                <option value="<?php echo htmlspecialchars($act); ?>">
+                                    <?php echo htmlspecialchars($act); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -126,14 +122,11 @@
                         <select class="form-select form-select-sm" id="filterFuente">
                             <option value="">Código Fuente</option>
                             <?php 
-                            $fuentes = array();
-                            foreach ($items as $item) {
-                                $fuentes[$item['codigog3']] = $item['descripciong3'];
-                            }
-                            ksort($fuentes);
-                            foreach ($fuentes as $code => $desc): ?>
-                                <option value="<?php echo htmlspecialchars($code); ?>">
-                                    <?php echo htmlspecialchars($code) . ' - ' . htmlspecialchars($desc); ?>
+                            $fuentes = array_unique(array_column($items, 'codigog3'));
+                            sort($fuentes);
+                            foreach ($fuentes as $fuente): ?>
+                                <option value="<?php echo htmlspecialchars($fuente); ?>">
+                                    <?php echo htmlspecialchars($fuente); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

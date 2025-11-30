@@ -20,6 +20,11 @@ class PresupuestoController {
     }
     
     public function uploadAction() {
+        // Solo admin puede importar presupuestos
+        if (!PermisosHelper::puedeGestionarUsuarios()) {
+            PermisosHelper::denegarAcceso('Solo administradores pueden importar presupuestos.');
+        }
+
         $resultado = null;
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -14,4 +14,35 @@ if (!class_exists('Database')) {
     require_once DATABASE_CLASS;
 }
 
+// Cargar modelos
+if (!class_exists('Usuario')) {
+    require_once APP_PATH . '/models/Usuario.php';
+}
+
+if (!class_exists('Certificate')) {
+    require_once APP_PATH . '/models/Certificate.php';
+}
+
+if (!class_exists('CertificateItem')) {
+    require_once APP_PATH . '/models/CertificateItem.php';
+}
+
+// Cargar helpers
+if (!class_exists('PermisosHelper')) {
+    require_once APP_PATH . '/helpers/PermisosHelper.php';
+}
+
+if (!class_exists('Parameter')) {
+    require_once APP_PATH . '/models/Parameter.php';
+}
+
+if (!class_exists('PresupuestoItem')) {
+    require_once APP_PATH . '/models/PresupuestoItem.php';
+}
+
+// Cargar controladores base
+if (!class_exists('AuthController')) {
+    require_once APP_PATH . '/controllers/AuthController.php';
+}
+
 ?>

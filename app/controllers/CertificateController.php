@@ -17,7 +17,15 @@ class CertificateController {
     }
     
     public function listAction() {
-        $certificates = $this->certificateModel->getAll();
+        // Obtener certificados según el rol del usuario
+        if (PermisosHelper::esAdmin()) {
+            // Admin ve todos
+            $certificates = $this->certificateModel->getAll();
+        } else {
+            // Operador solo ve sus certificados
+            $usuario_id = PermisosHelper::getUsuarioIdActual();
+            $certificates = $this->certificateModel->getByUsuario($usuario_id);
+        }
         require_once __DIR__ . '/../views/certificate/list.php';
     }
     
@@ -56,6 +64,8 @@ class CertificateController {
                     'clase_gasto' => $_POST['clase_gasto'] ?? '',
                     'tipo_doc_respaldo' => $_POST['tipo_doc_respaldo'] ?? '',
                     'clase_doc_respaldo' => $_POST['clase_doc_respaldo'] ?? '',
+                    'usuario_id' => $_SESSION['usuario_id'] ?? null,
+                    'usuario_creacion' => ($_SESSION['usuario_nombre'] ?? 'Sistema')
                 ];
 
                 error_log('Datos del certificado: ' . print_r($certificateData, true));
@@ -125,6 +135,12 @@ class CertificateController {
                 error_log('✓ Certificado creado exitosamente. ID: ' . $certificateId);
                 $_SESSION['success'] = 'Certificado creado correctamente con ' . count($items) . ' items.';
                 error_log('=== FIN DE CREATE EXITOSO ===');
+                
+                // Limpiar output buffer si está activo
+                if (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+                
                 header('Location: index.php?action=certificate-list');
                 exit;
             } catch (Exception $e) {
@@ -137,6 +153,11 @@ class CertificateController {
     }
     
     public function editAction($id) {
+        // Solo admin puede editar certificados
+        if (!PermisosHelper::puedeEditarCertificado(null)) {
+            PermisosHelper::denegarAcceso('Solo administradores pueden editar certificados.');
+        }
+
         $certificate = $this->certificateModel->getById($id);
         
         if (!$certificate) {
@@ -186,14 +207,23 @@ class CertificateController {
             header('Location: index.php?action=certificate-list');
             exit;
         }
-        
-        // Obtener detalles del certificado
+
+        // Verificar permisos: operador solo ve los suyos
+        if (!PermisosHelper::puedeVerCertificado($certificate['usuario_id'] ?? null)) {
+            PermisosHelper::denegarAcceso('No tienes permiso para ver este certificado.');
+        }
+                // Obtener detalles del certificado
         $details = $this->certificateModel->getCertificateDetails($id);
         
         require_once __DIR__ . '/../views/certificate/report.php';
     }
     
     public function deleteAction($id) {
+        // Solo admin puede eliminar certificados
+        if (!PermisosHelper::puedeEliminarCertificado()) {
+            PermisosHelper::denegarAcceso('Solo administradores pueden eliminar certificados.');
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $this->certificateModel->delete($id);

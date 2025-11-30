@@ -115,9 +115,11 @@
                     <a href="index.php?action=presupuesto-list" class="btn btn-success btn-block mb-2 w-100">
                         <i class="fas fa-list"></i> Ver Presupuestos
                     </a>
+                    <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
                     <a href="index.php?action=presupuesto-upload" class="btn btn-info w-100">
                         <i class="fas fa-upload"></i> Importar CSV
                     </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

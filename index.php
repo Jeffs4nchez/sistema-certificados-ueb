@@ -24,15 +24,64 @@ if (file_exists($dbPath) && !file_exists($markerFile)) {
 // Obtener acción del GET o usar dashboard como default
 $action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
 
-// No cargar layout para peticiones API
-if ($action !== 'api-certificate') {
-    // Iniciar la vista layout
-    require_once __DIR__ . '/app/views/layout/header.php';
+// Las rutas de autenticación NO requieren sesión
+$public_actions = ['auth'];
+$is_public = in_array($action, $public_actions);
+
+// Rutas que pueden hacer redirecciones (POST processing)
+$redirect_actions = ['certificate-create', 'usuario', 'perfil'];
+$may_redirect = in_array($action, $redirect_actions) && $_SERVER['REQUEST_METHOD'] === 'POST';
+
+// Iniciar output buffering si puede haber redirecciones
+if ($may_redirect) {
+    ob_start();
+}
+
+// No cargar layout para peticiones API ni para acciones que pueden redirigir
+if ($action !== 'api-certificate' && !$is_public && !$may_redirect) {
+    // Iniciar la vista layout con nuevo sidebar
+    require_once __DIR__ . '/app/views/layout/sidebar.php';
 }
 
 // Enrutador
 try {
     switch ($action) {
+        // ========== AUTENTICACIÓN ==========
+        case 'auth':
+            require_once __DIR__ . '/app/controllers/AuthController.php';
+            $controller = new AuthController();
+            $method = $_GET['method'] ?? 'login';
+            if (method_exists($controller, $method)) {
+                $controller->$method();
+            } else {
+                throw new Exception('Método no encontrado: ' . $method);
+            }
+            break;
+
+        // ========== PERFIL ==========
+        case 'perfil':
+            require_once __DIR__ . '/app/controllers/PerfilController.php';
+            $controller = new PerfilController();
+            $method = $_GET['method'] ?? 'ver';
+            if (method_exists($controller, $method)) {
+                $controller->$method();
+            } else {
+                throw new Exception('Método no encontrado: ' . $method);
+            }
+            break;
+
+        // ========== USUARIOS ==========
+        case 'usuario':
+            require_once __DIR__ . '/app/controllers/UsuarioController.php';
+            $controller = new UsuarioController();
+            $method = $_GET['method'] ?? 'listar';
+            if (method_exists($controller, $method)) {
+                $controller->$method();
+            } else {
+                throw new Exception('Método no encontrado: ' . $method);
+            }
+            break;
+
         // ========== DASHBOARD ==========
         case 'dashboard':
             require_once __DIR__ . '/app/controllers/DashboardController.php';
@@ -169,8 +218,13 @@ try {
     }
 }
 
-// Cerrar la vista layout (solo si no es API)
-if ($action !== 'api-certificate') {
-    require_once __DIR__ . '/app/views/layout/footer.php';
+// Cerrar la vista layout (solo si no es API ni auth ni redirect)
+if ($action !== 'api-certificate' && !$is_public && !$may_redirect) {
+    require_once __DIR__ . '/app/views/layout/sidebar-footer.php';
+}
+
+// Limpiar buffer si está abierto
+if ($may_redirect && ob_get_level() > 0) {
+    ob_end_flush();
 }
 ?>

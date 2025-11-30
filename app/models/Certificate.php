@@ -23,6 +23,15 @@ class Certificate {
     }
 
     /**
+     * Obtener certificados por usuario (para operadores)
+     */
+    public function getByUsuario($usuario_id) {
+        $stmt = $this->db->prepare("SELECT * FROM certificados WHERE usuario_id = ? ORDER BY id DESC");
+        $stmt->execute([$usuario_id]);
+        return $stmt ? $stmt->fetchAll() : array();
+    }
+
+    /**
      * Obtener certificado por ID
      */
     public function getById($id) {
@@ -39,8 +48,9 @@ class Certificate {
             INSERT INTO certificados (
                 numero_certificado, institucion, seccion_memorando, descripcion, 
                 fecha_elaboracion, monto_total, unid_ejecutora, unid_desc, 
-                clase_registro, clase_gasto, tipo_doc_respaldo, clase_doc_respaldo
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                clase_registro, clase_gasto, tipo_doc_respaldo, clase_doc_respaldo,
+                usuario_id, usuario_creacion
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
         $stmt->execute([
@@ -55,7 +65,9 @@ class Certificate {
             $data['clase_registro'] ?? '',
             $data['clase_gasto'] ?? '',
             $data['tipo_doc_respaldo'] ?? '',
-            $data['clase_doc_respaldo'] ?? ''
+            $data['clase_doc_respaldo'] ?? '',
+            $data['usuario_id'] ?? null,
+            $data['usuario_creacion'] ?? ''
         ]);
         
         return $this->db->lastInsertId();
