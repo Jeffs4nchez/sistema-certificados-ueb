@@ -39,23 +39,36 @@ if (!isset($_SESSION['usuario_id']) && !$is_public) {
     exit;
 }
 
-// Rutas que pueden hacer redirecciones (POST processing)
-$redirect_actions = ['certificate-create', 'usuario', 'perfil'];
-$may_redirect = in_array($action, $redirect_actions) && $_SERVER['REQUEST_METHOD'] === 'POST';
+// Rutas que pueden hacer redirecciones (acciones que hacen header() redirect)
+// Estas acciones SIEMPRE redirigen después de procesar
+$always_redirect_actions = ['bulk-upload', 'parameter-create', 'parameter-edit', 
+                            'parameter-delete', 'presupuesto-delete', 
+                            'certificate-delete'];
+// Estas acciones redirigen CONDICIONALMENTE (solo ciertos métodos)
+$redirect_actions = ['certificate-create', 'usuario', 'perfil', 'bulk-import', 'presupuesto-upload'];
+$redirect_methods = [
+    'usuario' => ['eliminar', 'crear', 'editar'],
+    'perfil' => ['cambiar_contraseña'],
+    'bulk-import' => ['bulk-upload'],
+    'presupuesto-upload' => [], // POST redirige, GET muestra formulario
+];
+$current_method = $_GET['method'] ?? 'default';
+$may_redirect = in_array($action, $always_redirect_actions) ||
+                (in_array($action, $redirect_actions) && $_SERVER['REQUEST_METHOD'] === 'POST') || 
+                (isset($redirect_methods[$action]) && in_array($current_method, $redirect_methods[$action]));
 
 // Iniciar output buffering si puede haber redirecciones
 if ($may_redirect) {
     ob_start();
 }
 
-// No cargar layout para peticiones API ni para acciones que pueden redirigir
-if ($action !== 'api-certificate' && !$is_public && !$may_redirect) {
-    // Iniciar la vista layout con nuevo sidebar
-    require_once __DIR__ . '/app/views/layout/sidebar.php';
-}
-
 // Enrutador
 try {
+    // Cargar layout ANTES de ejecutar controladores (excepto auth y API)
+    if ($action !== 'auth' && $action !== 'api-certificate' && !$may_redirect) {
+        require_once __DIR__ . '/app/views/layout/sidebar.php';
+    }
+
     switch ($action) {
         // ========== AUTENTICACIÓN ==========
         case 'auth':

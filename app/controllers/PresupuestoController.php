@@ -88,6 +88,11 @@ class PresupuestoController {
                     $_SESSION['error'] = 'Error al importar: ' . $e->getMessage();
                 }
             }
+            
+            // Limpiar buffer si está abierto y redirigir al GET
+            if (ob_get_level() > 0) ob_end_clean();
+            header('Location: index.php?action=presupuesto-upload');
+            exit;
         }
         
         require_once __DIR__ . '/../views/presupuesto/upload.php';
