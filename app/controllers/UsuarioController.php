@@ -45,7 +45,7 @@ class UsuarioController {
             include __DIR__ . '/../views/usuarios/list.php';
         } catch (Exception $e) {
             $_SESSION['error'] = "Error al obtener usuarios: " . $e->getMessage();
-            header('Location: index.php');
+            header('Location: ?action=dashboard');
         }
     }
 

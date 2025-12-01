@@ -288,5 +288,69 @@ class Certificate {
             ];
         }
     }
+
+    /**
+     * Contar certificados de un operador por nombre de usuario
+     */
+    public function countByOperador($usuario_nombre) {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ?");
+        $stmt->execute([$usuario_nombre]);
+        $row = $stmt->fetch();
+        return $row['total'] ?? 0;
+    }
+
+    /**
+     * Contar certificados de un operador por nombre de usuario y estado
+     */
+    public function countByOperadorAndStatus($usuario_nombre, $status) {
+        if ($status === 'APROBADO') {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND monto_total > 0");
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND (monto_total = 0 OR monto_total IS NULL)");
+        }
+        $stmt->execute([$usuario_nombre]);
+        $row = $stmt->fetch();
+        return $row['total'] ?? 0;
+    }
+
+    /**
+     * Obtener totales globales de monto y liquidado
+     */
+    public function getTotalsGlobal() {
+        $stmt = $this->db->prepare("
+            SELECT 
+                COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado,
+                COALESCE(SUM(c.monto_total), 0) as total_monto
+            FROM certificados c
+            LEFT JOIN detalle_certificados dc ON c.id = dc.certificado_id
+        ");
+        $stmt->execute();
+        $row = $stmt->fetch();
+        return [
+            'total_monto' => $row['total_monto'] ?? 0,
+            'total_liquidado' => $row['total_liquidado'] ?? 0
+        ];
+    }
+
+    /**
+     * Obtener totales de monto y liquidado por operador
+     */
+    public function getTotalsByOperador($usuario_nombre) {
+        $stmt = $this->db->prepare("
+            SELECT 
+                COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado,
+                COALESCE(SUM(c.monto_total), 0) as total_monto
+            FROM certificados c
+            LEFT JOIN detalle_certificados dc ON c.id = dc.certificado_id
+            WHERE c.usuario_creacion = ?
+            GROUP BY c.usuario_creacion
+        ");
+        $stmt->execute([$usuario_nombre]);
+        $row = $stmt->fetch();
+        return [
+            'total_monto' => $row['total_monto'] ?? 0,
+            'total_liquidado' => $row['total_liquidado'] ?? 0
+        ];
+    }
 }
 ?>

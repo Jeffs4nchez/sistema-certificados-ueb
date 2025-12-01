@@ -16,7 +16,7 @@ class AuthController {
     public function login() {
         // Si ya está autenticado, redirigir al dashboard
         if (isset($_SESSION['usuario_id'])) {
-            header('Location: index.php');
+            header('Location: ?action=dashboard');
             exit;
         }
         
@@ -53,7 +53,7 @@ class AuthController {
             $_SESSION['usuario_cargo'] = $usuario['cargo'];
 
             // Redirigir a dashboard
-            header('Location: index.php');
+            header('Location: ?action=dashboard');
             exit;
         } else {
             $_SESSION['error'] = 'Correo o contraseña incorrectos, o usuario inactivo';
@@ -100,7 +100,7 @@ class AuthController {
     public static function verificarPermiso($tipo_requerido) {
         if ($_SESSION['usuario_tipo'] !== $tipo_requerido) {
             $_SESSION['error'] = 'No tienes permisos para acceder a esta función';
-            header('Location: index.php');
+            header('Location: ?action=dashboard');
             exit;
         }
     }

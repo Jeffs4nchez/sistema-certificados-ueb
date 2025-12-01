@@ -7,7 +7,7 @@
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-md-12">
-            <h1 class="display-4">Dashboard</h1>
+            <h1 class="display-4"><i class="fas fa-home"></i> Inicio</h1>
             <p class="text-muted">Bienvenido al Sistema de Gestión de Certificados y Presupuesto</p>
         </div>
     </div>
@@ -26,102 +26,127 @@
         </div>
     <?php endif; ?>
 
-    <!-- Tarjetas KPI -->
+    <!-- Tarjetas KPI con tamaño uniforme -->
     <div class="row mb-4">
-        <div class="col-md-2">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-muted mb-1">Certificados</p>
-                            <h3 class="mb-0"><?php echo $totalCertificates; ?></h3>
-                        </div>
-                        <i class="fas fa-diploma fa-2x text-primary opacity-50"></i>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-diploma fa-2x text-primary"></i>
                     </div>
-                    <small class="text-success">
+                    <p class="text-muted mb-2"><small><i class="fas fa-list"></i> Total Certificados</small></p>
+                    <h3 class="mb-1"><?php echo $totalCertificates; ?></h3>
+                    <small class="text-success d-block">
                         <i class="fas fa-check"></i> <?php echo $completados; ?> completados
                     </small>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-2">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body py-3 px-3">
-                    <p class="text-muted mb-1 small"><i class="fas fa-list fa-xs"></i> Total Items</p>
-                    <h5 class="mb-0"><?php echo number_format($totalPresupuestos); ?></h5>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-2">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body py-3 px-3">
-                    <p class="text-muted mb-1 small"><i class="fas fa-coins fa-xs text-info"></i> Total Codificado</p>
-                    <h5 class="mb-0">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-coins fa-2x text-info"></i>
+                    </div>
+                    <p class="text-muted mb-2"><small><i class="fas fa-coins"></i> Total Codificado</small></p>
+                    <h4 class="mb-0">
                         $<?php echo number_format($resumenPresupuesto['total_codificado'] ?? 0, 0, '.', ','); ?>
-                    </h5>
+                    </h4>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-2">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body py-3 px-3">
-                    <p class="text-muted mb-1 small"><i class="fas fa-check-circle fa-xs text-success"></i> Total Certificado</p>
-                    <h5 class="mb-0">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <p class="text-muted mb-2"><small><i class="fas fa-check-circle"></i> Total Certificado</small></p>
+                    <h4 class="mb-0">
                         $<?php echo number_format($resumenPresupuesto['total_certificado'] ?? 0, 0, '.', ','); ?>
-                    </h5>
+                    </h4>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-2">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body py-3 px-3">
-                    <p class="text-muted mb-1 small"><i class="fas fa-balance-scale fa-xs text-warning"></i> Saldo Disponible</p>
-                    <h5 class="mb-0">
+        <div class="col-md-4 mt-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-balance-scale fa-2x text-warning"></i>
+                    </div>
+                    <p class="text-muted mb-2"><small><i class="fas fa-balance-scale"></i> Saldo Disponible</small></p>
+                    <h4 class="mb-0">
                         $<?php echo number_format($resumenPresupuesto['total_saldo_disponible'] ?? 0, 0, '.', ','); ?>
-                    </h5>
+                    </h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-list fa-2x text-secondary"></i>
+                    </div>
+                    <p class="text-muted mb-2"><small><i class="fas fa-list"></i> Total Items</small></p>
+                    <h4 class="mb-0"><?php echo number_format($totalPresupuestos); ?></h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mt-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-money-bill-wave fa-2x text-danger"></i>
+                    </div>
+                    <p class="text-muted mb-2"><small><i class="fas fa-money-bill-wave"></i> Total Liquidado</small></p>
+                    <h4 class="mb-0">
+                        $<?php echo number_format($resumenPresupuesto['total_liquidado'] ?? 0, 0, '.', ','); ?>
+                    </h4>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Acciones Rápidas -->
-    <div class="row">
-        <div class="col-md-6">
+    <!-- Sección Informativa de Certificados para Operadores -->
+    <?php if (($usuario_tipo ?? 'operador') === 'operador'): ?>
+    <div class="row mt-4">
+        <div class="col-md-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-diploma"></i> Certificados</h5>
+                    <h5 class="mb-0">
+                        <i class="fas fa-diploma"></i> Mis Certificados
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <a href="index.php?action=certificate-list" class="btn btn-primary btn-block mb-2 w-100">
-                        <i class="fas fa-list"></i> Ver Certificados
-                    </a>
-                    <a href="index.php?action=certificate-create" class="btn btn-success w-100">
-                        <i class="fas fa-plus"></i> Crear Certificado
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-coins"></i> Presupuesto</h5>
-                </div>
-                <div class="card-body">
-                    <a href="index.php?action=presupuesto-list" class="btn btn-success btn-block mb-2 w-100">
-                        <i class="fas fa-list"></i> Ver Presupuestos
-                    </a>
-                    <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
-                    <a href="index.php?action=presupuesto-upload" class="btn btn-info w-100">
-                        <i class="fas fa-upload"></i> Importar CSV
-                    </a>
-                    <?php endif; ?>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <p class="text-muted mb-2"><i class="fas fa-check-circle text-success"></i> Mis Certificados Completados</p>
+                                <h4 class="mb-0 text-success"><?php echo $usuarioCompletados; ?> de <?php echo $usuarioCertificates; ?></h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <p class="text-muted mb-2"><i class="fas fa-check-circle text-warning"></i> Mi Total Certificado</p>
+                                <h4 class="mb-0 text-warning">$<?php echo number_format($usuarioTotalCertificado, 0, '.', ','); ?></h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <p class="text-muted mb-2"><i class="fas fa-money-bill-wave text-danger"></i> Mi Total Liquidado</p>
+                                <h4 class="mb-0 text-danger">$<?php echo number_format($usuarioTotalLiquidado, 0, '.', ','); ?></h4>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    <?php endif; ?>
+
 </div>

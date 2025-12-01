@@ -162,7 +162,7 @@ class PresupuestoItem {
             SUM(col4) as total_certificado,
             SUM(col5) as total_comprometido,
             SUM(col6) as total_devengado,
-            SUM(col7) as total_pagado,
+            SUM(col7) as total_liquidado,
             SUM(saldo_disponible) as total_saldo_disponible,
             COUNT(*) as total_items,
             AVG(col20) as promedio_ejecucion
@@ -170,6 +170,28 @@ class PresupuestoItem {
         
         $result = $this->db->query($query);
         return $result->fetch();
+    }
+
+    /**
+     * Obtener resumen de montos por operador
+     */
+    public function getResumenByOperador($usuario_id) {
+        $query = "SELECT 
+            SUM(col1) as total_asignado,
+            SUM(col3) as total_codificado,
+            SUM(col4) as total_certificado,
+            SUM(col5) as total_comprometido,
+            SUM(col6) as total_devengado,
+            SUM(col7) as total_liquidado,
+            SUM(saldo_disponible) as total_saldo_disponible,
+            COUNT(*) as total_items,
+            AVG(col20) as promedio_ejecucion
+        FROM presupuesto_items
+        WHERE operado_por = ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$usuario_id]);
+        return $stmt->fetch();
     }
 
     /**

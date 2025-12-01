@@ -21,12 +21,23 @@ if (file_exists($dbPath) && !file_exists($markerFile)) {
     touch($markerFile); // Marcar que ya se instaló
 }
 
-// Obtener acción del GET o usar dashboard como default
-$action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
+// Obtener acción del GET o usar auth como default
+$action = isset($_GET['action']) ? trim($_GET['action']) : 'auth';
+
+// Si viene vacío, usar auth
+if (empty($action)) {
+    $action = 'auth';
+}
 
 // Las rutas de autenticación NO requieren sesión
 $public_actions = ['auth'];
 $is_public = in_array($action, $public_actions);
+
+// Si no hay sesión iniciada y no es una ruta pública, redirigir al login
+if (!isset($_SESSION['usuario_id']) && !$is_public) {
+    header('Location: ?action=auth&method=login');
+    exit;
+}
 
 // Rutas que pueden hacer redirecciones (POST processing)
 $redirect_actions = ['certificate-create', 'usuario', 'perfil'];
