@@ -57,12 +57,12 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         /* SIDEBAR */
-        /* Sidebar siempre a 60px */
+        /* Sidebar siempre a 220px - EXPANDIDO */
         .sidebar {
             position: fixed;
             left: 0;
             top: 0;
-            width: 60px;
+            width: 220px;
             height: 100vh;
             background: var(--azul-1);
             color: white;
@@ -72,7 +72,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             padding: 20px 0;
         }
 
-        /* Expandir al pasar mouse */
+        /* Expandir al pasar mouse - NO NECESARIO */
         .sidebar:hover {
             width: 220px;
         }
@@ -91,25 +91,25 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             margin-right: 15px;
         }
 
-        /* Estado collapsed por defecto */
+        /* Estado collapsed - SIEMPRE MOSTRADO */
         .sidebar-header h2,
         .nav-label,
         .menu-text {
-            display: none;
+            display: block;
             transition: all 0.3s ease;
         }
 
         .sidebar a {
-            padding-left: 10px;
+            padding-left: 15px;
         }
 
         .sidebar a i {
-            margin-right: 0;
+            margin-right: 15px;
             transition: all 0.3s ease;
         }
 
         .sidebar.collapsed {
-            width: 60px;
+            width: 220px;
         }
 
         .sidebar.collapsed:hover {
@@ -122,12 +122,12 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             margin-bottom: 20px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
         }
 
         .sidebar.collapsed .sidebar-header {
-            padding: 0 10px 30px;
-            justify-content: center;
+            padding: 0 20px 30px;
+            justify-content: flex-start;
         }
 
         .sidebar-header h2 {
@@ -178,7 +178,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         .sidebar-menu a {
             display: flex;
             align-items: center;
-            padding: 12px 10px;
+            padding: 12px 15px;
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
             transition: all 0.3s ease;
@@ -187,8 +187,8 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         .sidebar.collapsed a {
-            justify-content: center;
-            padding: 12px 10px;
+            justify-content: flex-start;
+            padding: 12px 15px;
         }
 
         .sidebar-menu a:hover {
@@ -211,7 +211,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         .sidebar.collapsed a i {
-            margin-right: 0;
+            margin-right: 15px;
         }
 
         .menu-text {
@@ -241,7 +241,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
 
         /* MAIN CONTENT */
         .main-content {
-            margin-left: 60px;
+            margin-left: 220px;
             transition: none;
             display: flex;
             flex-direction: column;
@@ -341,13 +341,13 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .sidebar:hover {
-                width: 60px;
+                width: 220px;
             }
 
             .sidebar:hover .sidebar-header h2,
             .sidebar:hover .nav-label,
             .sidebar:hover .menu-text {
-                display: none;
+                display: block;
             }
 
             .sidebar.active {
@@ -369,16 +369,16 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .sidebar.collapsed {
-                width: 60px;
+                width: 220px;
                 left: 0;
             }
 
             .main-content {
-                margin-left: 60px;
+                margin-left: 220px;
             }
 
             .sidebar:hover ~ .main-content {
-                margin-left: 60px;
+                margin-left: 220px;
             }
 
             .sidebar.active ~ .main-content {
@@ -386,7 +386,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .main-content.collapsed {
-                margin-left: 60px;
+                margin-left: 220px;
             }
 
             main {
