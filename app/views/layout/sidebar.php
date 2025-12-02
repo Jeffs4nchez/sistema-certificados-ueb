@@ -68,8 +68,10 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             color: white;
             z-index: 1000;
             overflow-y: auto;
+            overflow-x: hidden;
             transition: all 0.3s ease;
             padding: 20px 0;
+            box-sizing: border-box;
         }
 
         /* Expandir al pasar mouse - NO NECESARIO */
@@ -245,16 +247,17 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             transition: none;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            height: 100vh;
+            overflow-y: auto;
         }
 
         /* Cuando sidebar hace hover, NO se ajusta el margin */
         .sidebar:hover ~ .main-content {
-            margin-left: 60px;
+            margin-left: 200px;
         }
 
         .main-content.collapsed {
-            margin-left: 60px;
+            margin-left: 200px;
         }
 
         .top-bar {
