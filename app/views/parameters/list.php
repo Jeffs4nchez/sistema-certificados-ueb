@@ -25,8 +25,8 @@
     <?php endif; ?>
 
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-light border-bottom">
-            <h5 class="mb-0"><i class="fas fa-table"></i> Lista de <?php echo htmlspecialchars($title); ?></h5>
+        <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
+            <h5 class="mb-0" style="color: white !important;"><i class="fas fa-table"></i> Lista de <?php echo htmlspecialchars($title); ?></h5>
         </div>
         <div class="card-body p-0">
             <?php if (empty($items)): ?>
@@ -40,7 +40,7 @@
             <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                        <thead style="background-color: #0B283F !important; color: white !important;">
                             <tr>
                                 <th style="width: 60px;">#</th>
                                 <th>Nombre</th>

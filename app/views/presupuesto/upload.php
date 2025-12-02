@@ -42,8 +42,8 @@ if (!empty($_SESSION['success'])) {
     <div class="row">
         <div class="col-lg-8">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-upload"></i> Cargar Archivo CSV</h5>
+                <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
+                    <h5 class="mb-0" style="color: white !important;"><i class="fas fa-upload"></i> Cargar Archivo CSV</h5>
                 </div>
                 <div class="card-body p-4">
                     <form method="POST" action="index.php?action=presupuesto-upload" enctype="multipart/form-data" id="uploadForm">
@@ -83,13 +83,13 @@ if (!empty($_SESSION['success'])) {
 
         <div class="col-lg-4">
             <div class="card shadow-sm border-0 bg-light">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="fas fa-download"></i> Descargar Plantilla</h5>
+                <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
+                    <h5 class="mb-0" style="color: white !important;"><i class="fas fa-download"></i> Descargar Plantilla</h5>
                 </div>
                 <div class="card-body p-4">
                     <p class="text-muted">Usa esta plantilla como referencia para preparar tu archivo CSV:</p>
                     <table class="table table-sm table-bordered mb-3" style="font-size: 0.85rem;">
-                        <thead class="table-light">
+                        <thead style="background-color: #0B283F !important; color: white !important;">
                             <tr>
                                 <th>PROGRAMA</th>
                                 <th>COL1</th>
@@ -128,8 +128,8 @@ if (!empty($_SESSION['success'])) {
             </div>
 
             <div class="card shadow-sm border-0 mt-3">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-check-circle"></i> Instrucciones</h5>
+                <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
+                    <h5 class="mb-0" style="color: white !important;"><i class="fas fa-check-circle"></i> Instrucciones</h5>
                 </div>
                 <div class="card-body p-4">
                     <ol class="mb-0" style="font-size: 0.9rem;">

@@ -41,8 +41,8 @@ $isEdit = isset($certificate) && $certificate;
         <div class="row mb-2">
             <div class="col-lg-8">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Datos del Certificado</h5>
+                    <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
+                        <h5 class="mb-0" style="color: white !important;">Datos del Certificado</h5>
                     </div>
                     <div class="card-body p-2">
                         <div class="row g-2">
@@ -152,8 +152,8 @@ $isEdit = isset($certificate) && $certificate;
 
         <!-- SELECCIÓN DE ITEM -->
         <div class="card shadow-sm border-0 mb-2">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Agregar Items al Certificado</h5>
+            <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
+                <h5 class="mb-0" style="color: white !important;">Agregar Items al Certificado</h5>
             </div>
             <div class="card-body p-2">
                 <div class="row g-2">
@@ -254,14 +254,14 @@ $isEdit = isset($certificate) && $certificate;
 
         <!-- TABLA DE ITEMS -->
         <div class="card shadow-sm border-0 mb-2">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Items del Certificado</h5>
+            <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
+                <h5 class="mb-0" style="color: white !important;">Items del Certificado</h5>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover mb-0 table-sm" id="itemsTable">
-                    <thead class="table-light">
+                    <thead style="background-color: #0B283F !important; color: white !important;">
                         <tr>
-                            <th style="width: 8%; font-size: 12px;">PG</th>
+                            <th style="width: 8%; font-size: 12px;">#PG</th>
                             <th style="width: 8%; font-size: 12px;">SP</th>
                             <th style="width: 8%; font-size: 12px;">PY</th>
                             <th style="width: 8%; font-size: 12px;">ACT</th>
@@ -280,7 +280,7 @@ $isEdit = isset($certificate) && $certificate;
                             <td colspan="12">No hay items agregados</td>
                         </tr>
                     </tbody>
-                    <tfoot class="table-light fw-bold">
+                    <tfoot style="background-color: #0B283F !important; color: white !important; font-weight: bold;">
                         <tr>
                             <td colspan="10" class="text-end">TOTAL PRESUPUESTARIO:</td>
                             <td colspan="2">$ <span id="totalMonto">0.00</span></td>

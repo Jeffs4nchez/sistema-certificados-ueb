@@ -39,11 +39,20 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             --rojo-2: #E63946;
             --gris-oscuro: #2E3C4F;
             --gris-claro: #F5F7FA;
+            --gris-sidebar: #F0F2F5;
+            --gris-border: #E5E7EB;
             --blanco: #FFFFFF;
         }
 
         * {
-            font-family: 'Open Sans', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        code {
+            font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
         }
 
         html, body {
@@ -53,124 +62,83 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         body {
-            background-color: var(--gris-claro);
+            background: linear-gradient(135deg, #F5F7FA 0%, #E8ECEF 100%);
         }
 
-        /* SIDEBAR */
-        /* Sidebar siempre a 200px - EXPANDIDO */
+        /* ============================================
+           SIDEBAR MODERNO - ESTILO META BUSINESS SUITE
+           ============================================ */
         .sidebar {
             position: fixed;
             left: 0;
             top: 0;
-            width: 200px;
+            width: 260px;
             height: 100vh;
-            background: var(--azul-1);
-            color: white;
+            background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
+            border-right: 1px solid var(--gris-border);
+            color: #1F2937;
             z-index: 1000;
             overflow-y: auto;
             overflow-x: hidden;
-            transition: all 0.3s ease;
-            padding: 20px 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 16px 0;
             box-sizing: border-box;
-        }
-
-        /* Expandir al pasar mouse - NO NECESARIO */
-        .sidebar:hover {
-            width: 200px;
-        }
-
-        .sidebar:hover .sidebar-header h2,
-        .sidebar:hover .nav-label,
-        .sidebar:hover .menu-text {
-            display: block;
-        }
-
-        .sidebar:hover a {
-            padding-left: 15px;
-        }
-
-        .sidebar:hover a i {
-            margin-right: 15px;
-        }
-
-        /* Estado collapsed - SIEMPRE MOSTRADO */
-        .sidebar-header h2,
-        .nav-label,
-        .menu-text {
-            display: block;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar a {
-            padding-left: 15px;
-        }
-
-        .sidebar a i {
-            margin-right: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar.collapsed {
-            width: 200px;
-        }
-
-        .sidebar.collapsed:hover {
-            width: 200px;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
         }
 
         .sidebar-header {
-            padding: 0 20px 30px;
-            border-bottom: 2px solid var(--rojo-1);
-            margin-bottom: 20px;
+            padding: 12px 16px 20px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            justify-content: flex-start;
+            gap: 12px;
+            border-bottom: 1px solid var(--gris-border);
         }
 
-        .sidebar.collapsed .sidebar-header {
-            padding: 0 20px 30px;
-            justify-content: flex-start;
+        .sidebar-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--azul-1) 0%, var(--azul-2) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            font-weight: 600;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(11, 40, 63, 0.15);
         }
 
         .sidebar-header h2 {
             margin: 0;
-            font-size: 24px;
+            font-size: 16px;
             font-weight: 700;
-            color: var(--rojo-1);
+            color: var(--azul-1);
             white-space: nowrap;
-        }
-
-        .sidebar-logo {
-            width: 40px;
-            height: 40px;
-            background: var(--rojo-1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: white;
+            letter-spacing: -0.3px;
         }
 
         /* MENU */
         .sidebar-menu {
             list-style: none;
-            padding: 0;
+            padding: 8px 8px;
             margin: 0;
         }
 
         .sidebar-menu .nav-section {
-            padding: 20px 0;
+            padding: 12px 0;
+            margin-bottom: 4px;
         }
 
         .nav-label {
-            padding: 10px 20px;
-            font-size: 11px;
+            padding: 8px 16px;
+            font-size: 10px;
             font-weight: 700;
-            color: rgba(255, 255, 255, 0.6);
+            color: #9CA3AF;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
         }
 
         .sidebar-menu li {
@@ -180,108 +148,93 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         .sidebar-menu a {
             display: flex;
             align-items: center;
-            padding: 12px 15px;
-            color: rgba(255, 255, 255, 0.8);
+            padding: 9px 12px;
+            color: #374151;
             text-decoration: none;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 6px;
             position: relative;
-        }
-
-        .sidebar.collapsed a {
-            justify-content: flex-start;
-            padding: 12px 15px;
-        }
-
-        .sidebar-menu a:hover {
-            background-color: var(--azul-2);
-            color: white;
-            border-left-color: var(--rojo-1);
-        }
-
-        .sidebar-menu a.active {
-            background-color: var(--rojo-1);
-            color: white;
-            border-left-color: white;
+            font-size: 14px;
+            font-weight: 500;
+            gap: 10px;
+            margin: 0 4px;
         }
 
         .sidebar-menu a i {
-            width: 24px;
+            width: 20px;
             text-align: center;
-            margin-right: 15px;
-            font-size: 18px;
-        }
-
-        .sidebar.collapsed a i {
-            margin-right: 15px;
+            font-size: 16px;
+            transition: all 0.25s ease;
+            color: #6B7280;
         }
 
         .menu-text {
             white-space: nowrap;
+            flex: 1;
         }
 
-        /* Dropdown */
-        .submenu {
-            max-height: 1000px;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
+        .sidebar-menu a:hover {
+            background-color: #F3F4F6;
+            color: var(--azul-1);
         }
 
-        .submenu.collapsed {
-            max-height: 0;
+        .sidebar-menu a:hover i {
+            color: var(--azul-1);
+            transform: translateX(2px);
         }
 
-        .submenu a {
-            padding-left: 50px;
-            font-size: 14px;
-            background-color: var(--azul-2);
-            color: white !important;
+        .sidebar-menu a.active {
+            background: linear-gradient(135deg, rgba(11, 40, 63, 0.1) 0%, rgba(11, 40, 63, 0.05) 100%);
+            color: var(--azul-1);
+            font-weight: 600;
+            border-left: 3px solid var(--azul-1);
+            padding-left: 9px;
         }
 
-        .submenu a:hover {
-            background-color: var(--azul-3);
-            color: white !important;
+        .sidebar-menu a.active i {
+            color: var(--azul-1);
+        }
+
+        /* Secciones con separador visual */
+        .sidebar-menu .nav-section:not(:first-child) {
+            border-top: 1px solid var(--gris-border);
+            padding-top: 12px;
         }
 
         /* MAIN CONTENT */
         .main-content {
-            margin-left: 200px;
-            transition: none;
+            margin-left: 260px;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow-y: auto;
         }
 
-        /* Cuando sidebar hace hover, NO se ajusta el margin */
-        .sidebar:hover ~ .main-content {
-            margin-left: 200px;
-        }
-
         .main-content.collapsed {
-            margin-left: 200px;
+            margin-left: 260px;
         }
 
         .top-bar {
             background: white;
-            padding: 15px 30px;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 30px;
+            border-bottom: 1px solid var(--gris-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .top-bar-left {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .top-bar-right {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 16px;
         }
 
         .user-profile {
@@ -289,39 +242,35 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             align-items: center;
             gap: 10px;
             cursor: pointer;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 6px;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             background: transparent;
             border: none;
+            font-size: 14px;
         }
 
         .user-profile:hover {
-            background-color: rgba(0, 31, 63, 0.1);
+            background-color: #F3F4F6;
         }
 
         .user-profile:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 31, 63, 0.1);
+            box-shadow: 0 0 0 2px rgba(11, 40, 63, 0.1);
         }
 
         .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--rojo-1), var(--azul-1));
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--azul-1), var(--azul-2));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: 700;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
         }
 
         main {
@@ -331,22 +280,80 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         footer {
-            background: var(--azul-1);
-            color: white;
+            background: white;
+            color: #6B7280;
             text-align: center;
-            padding: 20px;
+            padding: 16px;
+            border-top: 1px solid var(--gris-border);
+            font-size: 12px;
             margin-top: auto;
         }
 
         /* RESPONSIVE */
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
             .sidebar {
-                width: 60px;
-                position: fixed;
+                width: 80px;
+            }
+
+            .sidebar-header h2,
+            .nav-label,
+            .menu-text {
+                display: none;
             }
 
             .sidebar:hover {
-                width: 200px;
+                width: 260px;
+            }
+
+            .sidebar:hover .sidebar-header h2,
+            .sidebar:hover .nav-label,
+            .sidebar:hover .menu-text {
+                display: block;
+            }
+
+            .sidebar:hover a {
+                padding-left: 12px;
+            }
+
+            .sidebar-menu a {
+                justify-content: center;
+                padding: 9px 0;
+                margin: 0;
+            }
+
+            .sidebar-menu a i {
+                width: 20px;
+                margin: 0;
+            }
+
+            .main-content {
+                margin-left: 80px;
+            }
+
+            .sidebar:hover ~ .main-content {
+                margin-left: 260px;
+            }
+
+            main {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+                left: 0;
+            }
+
+            .sidebar-header h2,
+            .nav-label,
+            .menu-text {
+                display: none;
+            }
+
+            .sidebar:hover {
+                width: 260px;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
             }
 
             .sidebar:hover .sidebar-header h2,
@@ -356,7 +363,8 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .sidebar.active {
-                width: 200px;
+                width: 260px;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
             }
 
             .sidebar.active .sidebar-header h2,
@@ -365,65 +373,49 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
                 display: block;
             }
 
-            .sidebar.active a {
-                padding-left: 20px;
-            }
-
-            .sidebar.active a i {
-                margin-right: 15px;
-            }
-
-            .sidebar.collapsed {
-                width: 200px;
-                left: 0;
-            }
-
             .main-content {
-                margin-left: 200px;
-            }
-
-            .sidebar:hover ~ .main-content {
-                margin-left: 200px;
+                margin-left: 60px;
             }
 
             .sidebar.active ~ .main-content {
-                margin-left: 200px;
+                margin-left: 260px;
             }
 
-            .main-content.collapsed {
-                margin-left: 200px;
+            .sidebar:hover ~ .main-content {
+                margin-left: 260px;
             }
 
             main {
-                padding: 15px;
+                padding: 16px;
+            }
+
+            .top-bar {
+                padding: 12px 16px;
+            }
+
+            .top-bar-left span {
+                display: none;
             }
         }
 
         @media (max-width: 576px) {
             .top-bar {
-                padding: 10px 15px;
+                padding: 10px 12px;
+                gap: 10px;
             }
 
             main {
-                padding: 10px;
-            }
-
-            .sidebar-header {
-                padding: 0 10px 20px;
-            }
-
-            .nav-label {
-                padding: 8px 10px;
-                font-size: 10px;
+                padding: 12px;
             }
 
             .sidebar-menu a {
-                padding: 10px 10px;
+                padding: 8px 12px;
                 font-size: 13px;
             }
 
-            .submenu a {
-                padding-left: 30px;
+            .nav-label {
+                padding: 6px 12px;
+                font-size: 9px;
             }
         }
 
@@ -450,12 +442,16 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         .sidebar::-webkit-scrollbar-track {
-            background: var(--azul-2);
+            background: transparent;
         }
 
         .sidebar::-webkit-scrollbar-thumb {
-            background: var(--rojo-1);
+            background: #D1D5DB;
             border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #9CA3AF;
         }
     </style>
 </head>

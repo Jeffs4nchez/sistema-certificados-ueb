@@ -91,7 +91,8 @@ require_once __DIR__ . '/../../helpers/MontoHelper.php';
             padding: 0.5rem;
             text-align: center;
             font-weight: bold;
-            background-color: #f9f9f9;
+            background-color: #0B283F;
+            color: white;
         }
         table td {
             border: 1px solid #333;

@@ -27,8 +27,8 @@
     <div class="row">
         <div class="col-md-12">
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-light border-bottom py-3 px-4">
-                    <h5 class="mb-0"><i class="fas fa-file-csv"></i> Formato Esperado del CSV</h5>
+                <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important; padding: 0.75rem 1rem;">
+                    <h5 class="mb-0" style="color: white !important;"><i class="fas fa-file-csv"></i> Formato Esperado del CSV</h5>
                 </div>
                 <div class="card-body p-4">
                     <div class="alert alert-info mb-4">
@@ -41,7 +41,7 @@
                     
                     <div class="table-responsive mb-3">
                         <table class="table table-sm table-bordered">
-                            <thead class="table-light">
+                            <thead style="background-color: #0B283F !important; color: white !important;">
                                 <tr>
                                     <th style="width: 50px;">Col</th>
                                     <th>Nombre</th>
@@ -170,8 +170,8 @@
             </div>
 
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light border-bottom py-3 px-4">
-                    <h5 class="mb-0"><i class="fas fa-upload"></i> Subir Archivo CSV</h5>
+                <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important; padding: 0.75rem 1rem;">
+                    <h5 class="mb-0" style="color: white !important;"><i class="fas fa-upload"></i> Subir Archivo CSV</h5>
                 </div>
                 <div class="card-body p-4">
                     <form method="POST" action="index.php?action=bulk-upload" enctype="multipart/form-data">

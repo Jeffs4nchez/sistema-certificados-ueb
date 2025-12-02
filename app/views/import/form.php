@@ -27,15 +27,15 @@
     <div class="row">
         <div class="col-md-8">
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-light border-bottom py-3 px-4">
-                    <h5 class="mb-0"><i class="fas fa-file-csv"></i> Formato del CSV</h5>
+                <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important; padding: 0.75rem 1rem;">
+                    <h5 class="mb-0" style="color: white !important;"><i class="fas fa-file-csv"></i> Formato del CSV</h5>
                 </div>
                 <div class="card-body p-4">
                     <p class="mb-3"><strong>El archivo CSV debe tener las siguientes columnas:</strong></p>
                     
                     <div class="table-responsive mb-3">
                         <table class="table table-sm table-bordered">
-                            <thead class="table-light">
+                            <thead style="background-color: #0B283F !important; color: white !important;">
                                 <tr>
                                     <th>Tipo</th>
                                     <th>Columna 1</th>
@@ -120,8 +120,8 @@
             </div>
 
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light border-bottom py-3 px-4">
-                    <h5 class="mb-0"><i class="fas fa-upload"></i> Subir Archivo</h5>
+                <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important; padding: 0.75rem 1rem;">
+                    <h5 class="mb-0" style="color: white !important;"><i class="fas fa-upload"></i> Subir Archivo</h5>
                 </div>
                 <div class="card-body p-4">
                     <form method="POST" action="index.php?action=import-upload" enctype="multipart/form-data">

@@ -144,10 +144,10 @@
 
     <!-- Tabla de Presupuestos -->
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-light border-bottom py-2 px-3">
+        <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important; border-bottom: 1px solid #333; padding: 0.5rem 0.75rem;">
             <div class="row align-items-center g-2">
                 <div class="col">
-                    <small><i class="fas fa-list"></i> Lista de Presupuestos</small>
+                    <small style="color: white !important;"><i class="fas fa-list"></i> Lista de Presupuestos</small>
                 </div>
                 <div class="col-auto">
                     <input type="text" class="form-control form-control-sm" id="searchInput" 
@@ -167,7 +167,7 @@
             <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                        <thead style="background-color: #0B283F !important; color: white !important;">
                             <tr>
                                 <th style="width: 50px;">#</th>
                                 <th>Código Programa</th>

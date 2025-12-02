@@ -89,8 +89,8 @@
 
     <!-- Tabla de Parámetros -->
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-light border-bottom py-2 px-3">
-            <small><i class="fas fa-list"></i> Lista de Parámetros (<?php echo count($parametros); ?>)</small>
+        <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important; border-bottom: 1px solid #333; padding: 0.5rem 0.75rem;">
+            <small style="color: white !important;"><i class="fas fa-list"></i> Lista de Parámetros (<?php echo count($parametros); ?>)</small>
         </div>
         <div class="card-body p-0">
             <?php if (empty($parametros)): ?>
@@ -104,7 +104,7 @@
             <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                        <thead style="background-color: #0B283F !important; color: white !important;">
                             <tr>
                                 <th style="width: 40px;">
                                     <input type="checkbox" id="selectAll" class="form-check-input" onchange="toggleAllCheckboxes(this)">
