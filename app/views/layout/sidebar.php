@@ -71,9 +71,9 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         .sidebar {
             position: fixed;
             left: 0;
-            top: 0;
-            width: 260px;
-            height: 100vh;
+            top: 56px;
+            width: 240px;
+            height: calc(100vh - 56px);
             background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
             border-right: 1px solid var(--gris-border);
             color: #1F2937;
@@ -87,17 +87,11 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         .sidebar-header {
-            padding: 12px 16px 20px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid var(--gris-border);
+            display: none;
         }
 
         .sidebar-logo {
-            width: 36px;
-            height: 36px;
+            display: none;
             background: linear-gradient(135deg, var(--azul-1) 0%, var(--azul-2) 100%);
             border-radius: 8px;
             display: flex;
@@ -129,9 +123,11 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         .sidebar-menu .nav-section {
             padding: 12px 0;
             margin-bottom: 4px;
+            display: block;
         }
 
         .nav-label {
+            display: block;
             padding: 8px 16px;
             font-size: 10px;
             font-weight: 700;
@@ -158,6 +154,8 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             font-weight: 500;
             gap: 10px;
             margin: 0 4px;
+            white-space: nowrap;
+            border-bottom: none;
         }
 
         .sidebar-menu a i {
@@ -176,6 +174,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         .sidebar-menu a:hover {
             background-color: #F3F4F6;
             color: var(--azul-1);
+            border-bottom-color: transparent;
         }
 
         .sidebar-menu a:hover i {
@@ -189,6 +188,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             font-weight: 600;
             border-left: 3px solid var(--azul-1);
             padding-left: 9px;
+            border-bottom: none;
         }
 
         .sidebar-menu a.active i {
@@ -199,39 +199,56 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         .sidebar-menu .nav-section:not(:first-child) {
             border-top: 1px solid var(--gris-border);
             padding-top: 12px;
+            border-left: none;
         }
 
         /* MAIN CONTENT */
         .main-content {
-            margin-left: 260px;
+            margin-left: 240px;
+            margin-top: 56px;
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: auto;
             overflow-y: auto;
         }
 
         .main-content.collapsed {
-            margin-left: 260px;
+            margin-left: 240px;
         }
 
         .top-bar {
-            background: white;
-            padding: 12px 30px;
+            background: #0B283F;
+            padding: 12px 120px;
             border-bottom: 1px solid var(--gris-border);
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+            height: 65px;
         }
 
         .top-bar-left {
             display: flex;
             align-items: center;
             gap: 12px;
+            position: absolute;
+            left: 20px;
+        }
+
+        .top-bar-left img {
+            height: 40px;
+            width: auto;
         }
 
         .top-bar-right {
+            position: absolute;
+            right: 30px;
             display: flex;
             align-items: center;
             gap: 16px;
@@ -248,21 +265,22 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             background: transparent;
             border: none;
             font-size: 14px;
+            color: white;
         }
 
         .user-profile:hover {
-            background-color: #F3F4F6;
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
         .user-profile:focus {
             outline: none;
-            box-shadow: 0 0 0 2px rgba(11, 40, 63, 0.1);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
         }
 
         .user-avatar {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, var(--azul-1), var(--azul-2));
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -279,6 +297,15 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             overflow-y: auto;
         }
 
+        .header-title {
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
         footer {
             background: white;
             color: #6B7280;
@@ -293,6 +320,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         @media (max-width: 992px) {
             .sidebar {
                 width: 80px;
+                top: 56px;
             }
 
             .sidebar-header h2,
@@ -302,7 +330,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .sidebar:hover {
-                width: 260px;
+                width: 240px;
             }
 
             .sidebar:hover .sidebar-header h2,
@@ -328,10 +356,11 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
 
             .main-content {
                 margin-left: 80px;
+                margin-top: 56px;
             }
 
             .sidebar:hover ~ .main-content {
-                margin-left: 260px;
+                margin-left: 240px;
             }
 
             main {
@@ -343,6 +372,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             .sidebar {
                 width: 60px;
                 left: 0;
+                top: 56px;
             }
 
             .sidebar-header h2,
@@ -363,7 +393,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .sidebar.active {
-                width: 260px;
+                width: 240px;
                 box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
             }
 
@@ -375,14 +405,15 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
 
             .main-content {
                 margin-left: 60px;
+                margin-top: 56px;
             }
 
             .sidebar.active ~ .main-content {
-                margin-left: 260px;
+                margin-left: 240px;
             }
 
             .sidebar:hover ~ .main-content {
-                margin-left: 260px;
+                margin-left: 240px;
             }
 
             main {
@@ -390,7 +421,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .top-bar {
-                padding: 12px 16px;
+                padding: 12px 20px;
             }
 
             .top-bar-left span {
@@ -456,17 +487,47 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
     </style>
 </head>
 <body>
+    <!-- TOP BAR (HEADER FIJO) -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <img src="public/img/logo-finanzas.png" alt="Logo UEB">
+        </div>
+        <span class="header-title">SISTEMA DE GESTION PRESUPUESTARIA UEB</span>
+        <div class="top-bar-right">
+            <?php if (isset($_SESSION['usuario_id'])): ?>
+            <div class="dropdown">
+                <button class="user-profile btn btn-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none; color: white;">
+                    <div class="user-avatar">
+                        <?php echo strtoupper(substr($_SESSION['usuario_nombre'], 0, 1)); ?>
+                    </div>
+                    <div>
+                        <div style="font-size: 13px; color: white; font-weight: 600;">
+                            <?php echo htmlspecialchars($_SESSION['usuario_nombre']); ?>
+                        </div>
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.7);">
+                            <?php echo ucfirst($_SESSION['usuario_tipo']); ?>
+                        </div>
+                    </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="?action=perfil&method=ver">
+                        <i class="fas fa-user"></i> Mi Perfil
+                    </a></li>
+                    <li><a class="dropdown-item" href="?action=perfil&method=cambiarContraseña">
+                        <i class="fas fa-key"></i> Cambiar Contraseña
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="?action=auth&method=logout">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a></li>
+                </ul>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- SIDEBAR -->
     <aside class="sidebar active" id="sidebar">
-        <div class="sidebar-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div class="sidebar-logo">
-                    <i class="fas fa-certificate"></i>
-                </div>
-                <h2>Gestión</h2>
-            </div>
-        </div>
-
         <ul class="sidebar-menu" id="sidebarMenu">
             <!-- DASHBOARD -->
             <li class="nav-item">
@@ -525,46 +586,5 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
 
     <!-- MAIN CONTENT -->
     <div class="main-content" id="mainContent">
-        <!-- TOP BAR -->
-        <div class="top-bar">
-            <div class="top-bar-left">
-                <button class="btn btn-sm" style="background: none; border: none; color: var(--azul-1); font-size: 20px;" onclick="toggleSidebarMobile()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <span style="color: var(--azul-1); font-weight: 600;">SISTEMA DE GESTION PRESUPUESTARIA UEB</span>
-            </div>
-            <div class="top-bar-right">
-                <?php if (isset($_SESSION['usuario_id'])): ?>
-                <div class="dropdown">
-                    <button class="user-profile btn btn-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none; color: inherit;">
-                        <div class="user-avatar">
-                            <?php echo strtoupper(substr($_SESSION['usuario_nombre'], 0, 1)); ?>
-                        </div>
-                        <div>
-                            <div style="font-size: 13px; color: var(--azul-1); font-weight: 600;">
-                                <?php echo htmlspecialchars($_SESSION['usuario_nombre']); ?>
-                            </div>
-                            <div style="font-size: 11px; color: #999;">
-                                <?php echo ucfirst($_SESSION['usuario_tipo']); ?>
-                            </div>
-                        </div>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="?action=perfil&method=ver">
-                            <i class="fas fa-user"></i> Mi Perfil
-                        </a></li>
-                        <li><a class="dropdown-item" href="?action=perfil&method=cambiarContraseña">
-                            <i class="fas fa-key"></i> Cambiar Contraseña
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="?action=auth&method=logout">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                        </a></li>
-                    </ul>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-
         <!-- MAIN AREA -->
         <main>
