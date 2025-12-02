@@ -1,13 +1,13 @@
 /* ============================================
    SISTEMA DE GESTIÓN - ESTILOS CORPORATIVOS
-   Colores: Azul (#0B283F) y Rojo (#C1272D)
+   Colores: Azul (#0B283F), Azul Oscuro (#0B0E3F), Teal (#0B3F3C) y Rojo (#C1272D)
    Tipografía: Argentum Sans (Open Sans)
    ============================================ */
 
 :root {
     --azul-1: #0B283F;
-    --azul-2: #0F3A52;
-    --azul-3: #134E6D;
+    --azul-2: #0B0E3F;
+    --azul-3: #0B3F3C;
     --rojo-1: #C1272D;
     --rojo-2: #E63946;
     --gris-oscuro: #2E3C4F;

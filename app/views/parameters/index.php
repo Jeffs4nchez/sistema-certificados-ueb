@@ -1,6 +1,6 @@
 <style>
     .bg-purple {
-        background-color: #6f42c1 !important;
+        background-color: #0B283F !important;
         color: #fff !important;
     }
 </style>

@@ -158,7 +158,7 @@ require_once __DIR__ . '/../../helpers/MontoHelper.php';
         .btn {
             padding: 8px 16px;
             margin-left: 0;
-            background-color: #007bff;
+            background-color: #0B283F;
             color: white;
             border: none;
             border-radius: 4px;
@@ -168,13 +168,13 @@ require_once __DIR__ . '/../../helpers/MontoHelper.php';
             font-size: 14px;
         }
         .btn:hover {
-            background-color: #0056b3;
+            background-color: #0B0E3F;
         }
         .btn-secondary {
-            background-color: #6c757d;
+            background-color: #0B3F3C;
         }
         .btn-secondary:hover {
-            background-color: #545b62;
+            background-color: #0B283F;
         }
         @media print {
             body {

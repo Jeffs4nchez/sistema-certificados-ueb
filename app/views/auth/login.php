@@ -16,8 +16,9 @@
     
     <style>
         :root {
-            --azul-1: #001F3F;
-            --azul-2: #0D47A1;
+            --azul-1: #0B283F;
+            --azul-2: #0B0E3F;
+            --azul-3: #0B3F3C;
             --rojo-1: #C1272D;
             --rojo-2: #E63946;
             --gris-claro: #F5F7FA;
@@ -149,7 +150,7 @@
 
         .form-control:focus {
             border-color: var(--azul-1);
-            box-shadow: 0 0 0 0.2rem rgba(0, 31, 63, 0.1);
+            box-shadow: 0 0 0 0.2rem rgba(11, 40, 63, 0.1);
             background-color: white;
         }
 
@@ -211,7 +212,7 @@
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 31, 63, 0.3);
+            box-shadow: 0 8px 24px rgba(11, 40, 63, 0.3);
             color: white;
         }
 

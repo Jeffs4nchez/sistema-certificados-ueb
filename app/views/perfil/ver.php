@@ -18,7 +18,7 @@
 
                     <div class="row">
                         <div class="col-md-3 text-center mb-4">
-                            <div style="width: 150px; height: 150px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 60px;">
+                            <div style="width: 150px; height: 150px; margin: 0 auto; background: linear-gradient(135deg, #0B283F 0%, #0B3F3C 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 60px;">
                                 <i class="fas fa-user"></i>
                             </div>
                         </div>
