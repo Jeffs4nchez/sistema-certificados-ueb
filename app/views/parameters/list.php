@@ -54,13 +54,13 @@
                                     <td class="text-muted small"><?php echo htmlspecialchars($item['id']); ?></td>
                                     <td class="fw-bold"><?php echo htmlspecialchars($item['nombre'] ?? ''); ?></td>
                                     <td class="text-muted"><?php echo htmlspecialchars($item['descripcion'] ?? ''); ?></td>
-                                    <td>
+                                    <td style="white-space: nowrap; vertical-align: middle;">
                                         <a href="index.php?action=parameter-edit&type=<?php echo $_GET['type']; ?>&id=<?php echo $item['id']; ?>" 
-                                           class="btn btn-sm btn-outline-secondary">
+                                           class="btn btn-sm btn-outline-secondary" style="display: inline-block; margin: 2px;">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <form method="POST" action="index.php?action=parameter-delete&id=<?php echo $item['id']; ?>&tipo=<?php echo $_GET['type']; ?>" 
-                                              style="display: inline-block;" 
+                                              style="display: inline-block; margin: 2px;" 
                                               onsubmit="return confirm('¿Estás seguro de que deseas eliminar este parámetro?');">
                                             <input type="hidden" name="_method" value="DELETE">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">

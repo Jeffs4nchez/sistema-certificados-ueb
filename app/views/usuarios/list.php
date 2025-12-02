@@ -105,20 +105,20 @@
                                     <?php echo ucfirst($usuario['estado']); ?>
                                 </span>
                             </td>
-                            <td>
+                            <td style="white-space: nowrap; vertical-align: middle;">
                                 <a href="?action=usuario&method=ver&id=<?php echo $usuario['id']; ?>" 
-                                   class="btn btn-sm btn-info" title="Ver detalles">
+                                   class="btn btn-sm btn-info" title="Ver detalles" style="display: inline-block; margin: 2px;">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 <a href="?action=usuario&method=editarFormulario&id=<?php echo $usuario['id']; ?>" 
-                                   class="btn btn-sm btn-warning" title="Editar">
+                                   class="btn btn-sm btn-warning" title="Editar" style="display: inline-block; margin: 2px;">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <?php if ($usuario['estado'] === 'activo'): ?>
                                     <a href="?action=usuario&method=eliminar&id=<?php echo $usuario['id']; ?>" 
                                        class="btn btn-sm btn-danger" 
                                        onclick="return confirm('¿Desactivar este usuario?');"
-                                       title="Desactivar">
+                                       title="Desactivar" style="display: inline-block; margin: 2px;">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 <?php endif; ?>

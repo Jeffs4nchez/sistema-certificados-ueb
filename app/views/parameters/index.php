@@ -142,13 +142,13 @@
                                     <td><span class="badge bg-<?php echo $colores[$param['tipo']] ?? 'secondary'; ?>"><?php echo htmlspecialchars($param['tipo']); ?></span></td>
                                     <td><strong><?php echo htmlspecialchars($param['codigo']); ?></strong></td>
                                     <td><?php echo htmlspecialchars($param['descripcion']); ?></td>
-                                    <td>
+                                    <td style="white-space: nowrap; vertical-align: middle;">
                                         <a href="index.php?action=parameter-edit&id=<?php echo $param['id']; ?>&tipo=<?php echo urlencode($param['tipo']); ?>" 
-                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                           class="btn btn-sm btn-outline-primary" title="Editar" style="display: inline-block; margin: 2px;">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <form method="POST" action="index.php?action=parameter-delete&id=<?php echo $param['id']; ?>&tipo=<?php echo urlencode($param['tipo']); ?>" 
-                                              style="display: inline-block;" 
+                                              style="display: inline-block; margin: 2px;" 
                                               onsubmit="return confirm('¿Estás seguro de que deseas eliminar este parámetro?');">
                                             <input type="hidden" name="_method" value="DELETE">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">

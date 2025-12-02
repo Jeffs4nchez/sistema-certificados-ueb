@@ -60,22 +60,22 @@
                                     <td><?php echo htmlspecialchars($cert['usuario_creacion'] ?? 'Sistema'); ?></td>
                                     <td><?php echo date('d/m/Y', strtotime($cert['fecha_elaboracion'] ?? '2025-01-01')); ?></td>
                                     <td class="text-end">$ <?php echo number_format($cert['monto_total'] ?? 0, 2, ',', '.'); ?></td>
-                                    <td>
+                                    <td style="white-space: nowrap; vertical-align: middle;">
                                         <a href="index.php?action=certificate-view&id=<?php echo $cert['id']; ?>" 
-                                           class="btn btn-sm btn-outline-primary" title="Ver">
+                                           class="btn btn-sm btn-outline-primary" title="Ver" style="display: inline-block; margin: 2px;">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <button type="button" class="btn btn-sm btn-outline-success" title="Liquidación"
-                                                onclick="openLiquidacionModal(<?php echo $cert['id']; ?>)">
+                                                onclick="openLiquidacionModal(<?php echo $cert['id']; ?>)" style="display: inline-block; margin: 2px;">
                                             <i class="fas fa-file-invoice-dollar"></i>
                                         </button>
                                         <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
                                         <a href="index.php?action=certificate-edit&id=<?php echo $cert['id']; ?>" 
-                                           class="btn btn-sm btn-outline-secondary" title="Editar">
+                                           class="btn btn-sm btn-outline-secondary" title="Editar" style="display: inline-block; margin: 2px;">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <form method="POST" action="index.php?action=certificate-delete&id=<?php echo $cert['id']; ?>" 
-                                              style="display: inline;" 
+                                              style="display: inline-block; margin: 2px;" 
                                               onsubmit="return confirm('¿Estás seguro de eliminar este certificado?');">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                 <i class="fas fa-trash"></i>
@@ -98,13 +98,21 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Liquidación de Certificado</h5>
+                <h5 class="modal-title" style="color: white !important;">Liquidación de Certificado</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="liquidacionContent">
                     <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</p>
                 </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #dee2e6;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="btnGuardarLiquidaciones">
+                    <i class="fas fa-save"></i> Guardar Liquidaciones
+                </button>
             </div>
         </div>
     </div>
@@ -132,8 +140,7 @@ async function openLiquidacionModal(certificateId) {
                                 <th style="width: 8%;">ITEM</th>
                                 <th style="width: 10%;">Descripción</th>
                                 <th style="width: 12%;">Monto</th>
-                                <th style="width: 15%;">Liquidación</th>
-                                <th style="width: 8%;">Acción</th>
+                                <th style="width: 20%;">Liquidación</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -150,20 +157,9 @@ async function openLiquidacionModal(certificateId) {
                         <td><small>${item.descripcion_item}</small></td>
                         <td class="text-end">$ ${parseFloat(item.monto).toFixed(2)}</td>
                         <td>
-                            <div class="input-group input-group-sm">
-                                <input type="number" class="form-control form-control-sm liquidacion-input" 
-                                       value="${parseFloat(item.cantidad_liquidacion || 0).toFixed(2)}"
-                                       data-detalle-id="${item.id}" step="0.01" min="0">
-                                <button class="btn btn-sm btn-outline-success" type="button"
-                                        onclick="saveLiquidacion(${item.id}, this)">
-                                    <i class="fas fa-save"></i>
-                                </button>
-                            </div>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger" onclick="clearLiquidacion(${item.id}, this)" title="Limpiar">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <input type="number" class="form-control form-control-sm liquidacion-input" 
+                                   value="${parseFloat(item.cantidad_liquidacion || 0).toFixed(2)}"
+                                   data-detalle-id="${item.id}" step="0.01" min="0">
                         </td>
                     </tr>
                 `;
@@ -225,5 +221,52 @@ async function clearLiquidacion(detalleId, button) {
         await saveLiquidacion(detalleId, saveButton);
     }
 }
+
+// Guardar todas las liquidaciones
+document.getElementById('btnGuardarLiquidaciones').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    
+    try {
+        const inputs = document.querySelectorAll('.liquidacion-input');
+        const liquidaciones = [];
+        
+        inputs.forEach(input => {
+            liquidaciones.push({
+                detalle_id: input.dataset.detalleId,
+                cantidad_liquidacion: parseFloat(input.value) || 0
+            });
+        });
+        
+        const formData = new FormData();
+        formData.append('liquidaciones', JSON.stringify(liquidaciones));
+        
+        const response = await fetch('index.php?action=api-certificate&action-api=save-liquidaciones', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            btn.innerHTML = '<i class="fas fa-check"></i> Guardado';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
+                btn.disabled = false;
+                bootstrap.Modal.getInstance(document.getElementById('liquidacionModal')).hide();
+                location.reload();
+            }, 1500);
+        } else {
+            alert('Error: ' + result.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
+    }
+});
 </script>
 

@@ -222,6 +222,47 @@ class APICertificateController {
     }
 
     /**
+     * Guardar múltiples liquidaciones (batch)
+     */
+    public function saveLiquidacionesAction() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->jsonResponse(false, null, 'POST requerido');
+        }
+        
+        try {
+            $jsonData = $_POST['liquidaciones'] ?? '[]';
+            $data = json_decode($jsonData, true);
+            
+            if (empty($data)) {
+                $this->jsonResponse(false, null, 'No hay liquidaciones para guardar');
+            }
+            
+            require_once __DIR__ . '/../models/Certificate.php';
+            $certificateModel = new Certificate();
+            $guardadas = 0;
+            
+            foreach ($data as $item) {
+                $detalleId = $item['detalle_id'] ?? null;
+                $cantidadLiquidacion = floatval($item['cantidad_liquidacion'] ?? 0);
+                
+                if (!$detalleId) continue;
+                
+                try {
+                    $certificateModel->updateLiquidacion($detalleId, $cantidadLiquidacion);
+                    $guardadas++;
+                } catch (Exception $e) {
+                    // Continuar con el siguiente item si hay error en uno
+                    continue;
+                }
+            }
+            
+            $this->jsonResponse(true, ['guardadas' => $guardadas], "Se guardaron $guardadas liquidaciones correctamente");
+        } catch (Exception $e) {
+            $this->jsonResponse(false, null, 'Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Router dinámico
      */
     public function route($action) {

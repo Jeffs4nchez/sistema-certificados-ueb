@@ -531,7 +531,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
                 <button class="btn btn-sm" style="background: none; border: none; color: var(--azul-1); font-size: 20px;" onclick="toggleSidebarMobile()">
                     <i class="fas fa-bars"></i>
                 </button>
-                <span style="color: var(--azul-1); font-weight: 600;">Sistema de Gestión</span>
+                <span style="color: var(--azul-1); font-weight: 600;">SISTEMA DE GESTION PRESUPUESTARIA UEB</span>
             </div>
             <div class="top-bar-right">
                 <?php if (isset($_SESSION['usuario_id'])): ?>

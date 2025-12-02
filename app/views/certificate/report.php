@@ -2,6 +2,7 @@
 /**
  * Vista: Reporte de Certificado Presupuestario (Formato Oficial A4)
  */
+require_once __DIR__ . '/../../helpers/MontoHelper.php';
 ?>
 
 <!DOCTYPE html>
@@ -9,6 +10,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Certificado Presupuestario - <?php echo htmlspecialchars($certificate['numero_certificado']); ?></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -21,6 +23,7 @@
             background: #f5f5f5;
             padding: 0;
             margin: 0;
+            overflow-x: hidden;
         }
         
         .page {
@@ -29,29 +32,52 @@
             height: 297mm;
             margin: 10px auto;
             padding: 8mm;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
             font-size: 10px;
             display: flex;
             flex-direction: column;
             position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
         }
         
         .print-btn {
-            padding: 8px 15px;
-            background: #007bff;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #0B283F 0%, #0B3F3C 100%);
             color: white;
-            border: none;
-            border-radius: 5px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
+            font-weight: 700;
             position: absolute;
             top: 100px;
             right: 20px;
             z-index: 1000;
+            box-shadow: 0 4px 15px rgba(11, 40, 63, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
         
         .print-btn:hover {
-            background: #0056b3;
+            background: linear-gradient(135deg, #0B3F3C 0%, #0B283F 100%);
+            box-shadow: 0 8px 25px rgba(11, 40, 63, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .print-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(11, 40, 63, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .print-btn i {
+            font-size: 16px;
         }
         
         /* ===== HEADER ===== */
@@ -456,32 +482,81 @@
         }
         
         @media print {
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                width: 210mm !important;
+                height: 297mm !important;
+            }
+            
             body {
-                background: white;
-                padding: 0;
-                margin: 0;
+                font-size: 10px !important;
             }
             
             .page {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                padding: 8mm;
-                box-shadow: none;
-                page-break-after: always;
-                font-size: 10px;
-                display: flex;
-                flex-direction: column;
+                width: 210mm !important;
+                height: 297mm !important;
+                margin: 0 !important;
+                padding: 8mm !important;
+                box-shadow: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+                page-break-after: always !important;
+                background: white !important;
+                box-sizing: border-box !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
             }
             
             .print-btn {
-                display: none;
+                display: none !important;
+            }
+            
+            @page {
+                size: A4;
+                margin: 0 !important;
+                padding: 0 !important;
             }
         }
     </style>
 </head>
 <body>
-    <button class="print-btn" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="print-btn" onclick="imprimirConNombre()" title="Guardar/Imprimir certificado">
+        <i class="fas fa-download"></i> Descargar PDF
+    </button>
+    
+    <script>
+        function imprimirConNombre() {
+            // Extraer número de certificado del contenido HTML
+            let numeroCertificado = 'CERTIFICADO';
+            
+            // Buscar el elemento que contiene el número de certificado
+            const elementos = document.querySelectorAll('div');
+            for (let el of elementos) {
+                if (el.textContent.includes('CERT-')) {
+                    const match = el.textContent.match(/CERT-\d+/);
+                    if (match) {
+                        numeroCertificado = match[0];
+                        break;
+                    }
+                }
+            }
+            
+            // Establecer el título de la página para el nombre del PDF
+            const tituloOriginal = document.title;
+            document.title = `Certificacion_Presupuestaria_${numeroCertificado}`;
+            
+            // Imprimir
+            window.print();
+            
+            // Restaurar el título original después de imprimir
+            setTimeout(() => {
+                document.title = tituloOriginal;
+            }, 500);
+        }
+    </script>
     
     <div class="page">
         <!-- HEADER PRINCIPAL -->
@@ -617,7 +692,7 @@
         
         <!-- SON -->
         <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 4px 6px; margin: 20px 0; font-size: 8px; font-weight: bold;">
-            SON: MIL NOVECIENTOS VEINTE DÓLARES
+            <?php echo MontoHelper::convertirALetras($totalMonto); ?>
         </div>
         
         <!-- DESCRIPCION -->

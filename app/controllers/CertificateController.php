@@ -251,5 +251,40 @@ class CertificateController {
         
         require_once __DIR__ . '/../views/certificate/report.php';
     }
+    
+    public function saveLiquidacionesAction() {
+        header('Content-Type: application/json');
+        
+        try {
+            $data = json_decode($_POST['liquidaciones'] ?? '[]', true);
+            
+            if (empty($data)) {
+                echo json_encode(['success' => false, 'message' => 'No hay liquidaciones para guardar']);
+                exit;
+            }
+            
+            $guardadas = 0;
+            foreach ($data as $item) {
+                $detalleId = $item['detalle_id'] ?? null;
+                $cantidadLiquidacion = floatval($item['cantidad_liquidacion'] ?? 0);
+                
+                if (!$detalleId) continue;
+                
+                // Actualizar liquidación en la base de datos
+                $query = "UPDATE certificate_details SET cantidad_liquidacion = ? WHERE id = ?";
+                $stmt = $this->certificateModel->db->prepare($query);
+                if ($stmt->execute([$cantidadLiquidacion, $detalleId])) {
+                    $guardadas++;
+                }
+            }
+            
+            echo json_encode([
+                'success' => true, 
+                'message' => "Se guardaron $guardadas liquidaciones correctamente"
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }
 ?>

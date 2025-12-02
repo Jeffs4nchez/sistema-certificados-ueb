@@ -117,8 +117,8 @@
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
+                <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
+                    <h5 class="mb-0" style="color: white !important;">
                         <i class="fas fa-diploma"></i> Mis Certificados
                     </h5>
                 </div>
