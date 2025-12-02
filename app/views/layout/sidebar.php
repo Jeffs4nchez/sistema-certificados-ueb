@@ -57,12 +57,12 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         /* SIDEBAR */
-        /* Sidebar siempre a 220px - EXPANDIDO */
+        /* Sidebar siempre a 200px - EXPANDIDO */
         .sidebar {
             position: fixed;
             left: 0;
             top: 0;
-            width: 220px;
+            width: 200px;
             height: 100vh;
             background: var(--azul-1);
             color: white;
@@ -74,7 +74,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
 
         /* Expandir al pasar mouse - NO NECESARIO */
         .sidebar:hover {
-            width: 220px;
+            width: 200px;
         }
 
         .sidebar:hover .sidebar-header h2,
@@ -109,11 +109,11 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
         }
 
         .sidebar.collapsed {
-            width: 220px;
+            width: 200px;
         }
 
         .sidebar.collapsed:hover {
-            width: 220px;
+            width: 200px;
         }
 
         .sidebar-header {
@@ -241,7 +241,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
 
         /* MAIN CONTENT */
         .main-content {
-            margin-left: 220px;
+            margin-left: 200px;
             transition: none;
             display: flex;
             flex-direction: column;
@@ -341,7 +341,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .sidebar:hover {
-                width: 220px;
+                width: 200px;
             }
 
             .sidebar:hover .sidebar-header h2,
@@ -351,7 +351,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .sidebar.active {
-                width: 220px;
+                width: 200px;
             }
 
             .sidebar.active .sidebar-header h2,
@@ -369,24 +369,24 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             }
 
             .sidebar.collapsed {
-                width: 220px;
+                width: 200px;
                 left: 0;
             }
 
             .main-content {
-                margin-left: 220px;
+                margin-left: 200px;
             }
 
             .sidebar:hover ~ .main-content {
-                margin-left: 220px;
+                margin-left: 200px;
             }
 
             .sidebar.active ~ .main-content {
-                margin-left: 220px;
+                margin-left: 200px;
             }
 
             .main-content.collapsed {
-                margin-left: 220px;
+                margin-left: 200px;
             }
 
             main {
