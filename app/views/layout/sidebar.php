@@ -235,10 +235,12 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             padding-left: 50px;
             font-size: 14px;
             background-color: var(--azul-2);
+            color: white !important;
         }
 
         .submenu a:hover {
             background-color: var(--azul-3);
+            color: white !important;
         }
 
         /* MAIN CONTENT */
