@@ -32,9 +32,9 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
     
     <style>
         :root {
-            --azul-1: #001F3F;
-            --azul-2: #0D47A1;
-            --azul-3: #1565C0;
+            --azul-1: #0B283F;
+            --azul-2: #0F3A52;
+            --azul-3: #134E6D;
             --rojo-1: #C1272D;
             --rojo-2: #E63946;
             --gris-oscuro: #2E3C4F;

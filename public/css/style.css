@@ -1,13 +1,13 @@
 /* ============================================
    SISTEMA DE GESTIÓN - ESTILOS CORPORATIVOS
-   Colores: Azul (#001F3F) y Rojo (#C1272D)
+   Colores: Azul (#0B283F) y Rojo (#C1272D)
    Tipografía: Argentum Sans (Open Sans)
    ============================================ */
 
 :root {
-    --azul-1: #001F3F;
-    --azul-2: #0D47A1;
-    --azul-3: #1565C0;
+    --azul-1: #0B283F;
+    --azul-2: #0F3A52;
+    --azul-3: #134E6D;
     --rojo-1: #C1272D;
     --rojo-2: #E63946;
     --gris-oscuro: #2E3C4F;
@@ -46,7 +46,7 @@ html, body {
 
 .btn-primary:hover {
     background-color: var(--azul-2);
-    box-shadow: 0 4px 8px rgba(0, 31, 63, 0.2);
+    box-shadow: 0 4px 8px rgba(11, 40, 63, 0.2);
 }
 
 .btn-danger {
@@ -143,7 +143,7 @@ html, body {
 }
 
 .table tbody tr:hover {
-    background-color: rgba(0, 31, 63, 0.05);
+    background-color: rgba(11, 40, 63, 0.05);
 }
 
 .table tbody td {
@@ -164,7 +164,7 @@ html, body {
 .form-control:focus,
 .form-select:focus {
     border-color: var(--azul-1);
-    box-shadow: 0 0 0 0.2rem rgba(0, 31, 63, 0.15);
+    box-shadow: 0 0 0 0.2rem rgba(11, 40, 63, 0.15);
 }
 
 .form-label {
@@ -369,7 +369,7 @@ h4 {
 }
 
 .dropdown-item:hover {
-    background-color: rgba(0, 31, 63, 0.05);
+    background-color: rgba(11, 40, 63, 0.05);
     color: var(--azul-1);
 }
 
