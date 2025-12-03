@@ -180,4 +180,21 @@ class CertificateItem {
         }
         return $rows;
     }
+
+    /**
+     * Obtener el monto codificado (col3) de presupuesto_items
+     * basado en los códigos del item
+     */
+    public function getMontoCoificado($cod_programa, $cod_subprograma, $cod_proyecto, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item) {
+        // Buscar en presupuesto_items basado en los códigos
+        $sql = "SELECT col3 as monto_codificado FROM presupuesto_items 
+                WHERE codigog1 = ? AND codigog2 = ? AND codigog3 = ? AND codigog4 = ? AND codigog5 = ? 
+                LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$cod_programa, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item]);
+        $row = $stmt->fetch();
+        
+        return $row ? (float)$row['monto_codificado'] : 0;
+    }
 }

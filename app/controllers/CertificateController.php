@@ -80,6 +80,37 @@ class CertificateController {
                 error_log('Items decodificados: ' . print_r($items, true));
                 error_log('Count items: ' . count($items ?? []));
 
+                // VALIDACIÓN: Verificar que cada monto NO exceda el monto codificado
+                if (is_array($items) && count($items) > 0) {
+                    $erroresValidacion = [];
+                    foreach ($items as $index => $item) {
+                        $montoItem = floatval($item['monto'] ?? 0);
+                        
+                        // Obtener monto codificado del presupuesto
+                        $montoCoificado = $this->certificateItemModel->getMontoCoificado(
+                            $item['programa_codigo'] ?? '',
+                            $item['subprograma_codigo'] ?? '',
+                            $item['proyecto_codigo'] ?? '',
+                            $item['actividad_codigo'] ?? '',
+                            $item['fuente_codigo'] ?? '',
+                            $item['ubicacion_codigo'] ?? '',
+                            $item['item_codigo'] ?? ''
+                        );
+                        
+                        error_log("Item " . ($index + 1) . ": Monto=$montoItem, Codificado=$montoCoificado");
+                        
+                        // Si el monto ingresado es MAYOR al codificado, error
+                        if ($montoItem > $montoCoificado) {
+                            $erroresValidacion[] = "Item #" . ($index + 1) . ": Monto ingresado ($" . number_format($montoItem, 2) . ") excede el monto codificado ($" . number_format($montoCoificado, 2) . ")";
+                        }
+                    }
+                    
+                    // Si hay errores, lanzar excepción
+                    if (!empty($erroresValidacion)) {
+                        throw new Exception("❌ No se puede crear el certificado:\n" . implode("\n", $erroresValidacion));
+                    }
+                }
+
                 // Calcular monto total
                 $montoTotal = 0;
                 if (is_array($items)) {
@@ -267,14 +298,19 @@ class CertificateController {
             foreach ($data as $item) {
                 $detalleId = $item['detalle_id'] ?? null;
                 $cantidadLiquidacion = floatval($item['cantidad_liquidacion'] ?? 0);
+                $memorando = $item['memorando'] ?? '';
                 
                 if (!$detalleId) continue;
                 
-                // Actualizar liquidación en la base de datos
-                $query = "UPDATE certificate_details SET cantidad_liquidacion = ? WHERE id = ?";
+                // Actualizar liquidación y memorando en la base de datos
+                $query = "UPDATE detalle_certificados SET cantidad_liquidacion = ?, memorando = ? WHERE id = ?";
                 $stmt = $this->certificateModel->db->prepare($query);
-                if ($stmt->execute([$cantidadLiquidacion, $detalleId])) {
+                error_log("Guardando: detalle_id=$detalleId, cantidad_liquidacion=$cantidadLiquidacion, memorando=$memorando");
+                if ($stmt->execute([$cantidadLiquidacion, $memorando, $detalleId])) {
+                    error_log("✓ Guardado correctamente");
                     $guardadas++;
+                } else {
+                    error_log("✗ Error al guardar");
                 }
             }
             
@@ -283,6 +319,7 @@ class CertificateController {
                 'message' => "Se guardaron $guardadas liquidaciones correctamente"
             ]);
         } catch (Exception $e) {
+            error_log("Error en saveLiquidacionesAction: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }

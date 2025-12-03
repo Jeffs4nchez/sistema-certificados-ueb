@@ -543,6 +543,46 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
+        // VALIDACIÓN: Obtener monto codificado y validar
+        try {
+            let urlMonto = 'index.php?action=api-certificate&action-api=get-monto-codicado';
+            urlMonto += '&cod_programa=' + encodeURIComponent(codPrograma);
+            urlMonto += '&cod_subprograma=' + encodeURIComponent(codSubprograma);
+            urlMonto += '&cod_proyecto=' + encodeURIComponent(codProyecto);
+            urlMonto += '&cod_actividad=' + encodeURIComponent(codActividad);
+            urlMonto += '&cod_fuente=' + encodeURIComponent(codFuente);
+            urlMonto += '&cod_ubicacion=' + encodeURIComponent(codUbicacion);
+            urlMonto += '&cod_item=' + encodeURIComponent(itemCodigo);
+            
+            const responseMontoData = await fetch(urlMonto);
+            const dataMonto = await responseMontoData.json();
+            
+            if (dataMonto.success && dataMonto.data) {
+                const montoCoificado = dataMonto.data.monto_codificado;
+                console.log('Validación de monto:', { monto, montoCoificado });
+                
+                // Si el monto ingresado EXCEDE el codificado, mostrar alerta
+                if (monto > montoCoificado) {
+                    alert('❌ ERROR: El monto ingresado ($' + monto.toFixed(2) + ') EXCEDE el monto codificado ($' + montoCoificado.toFixed(2) + ')\n\nNo se puede agregar este item.');
+                    console.error('Monto invalido:', monto, 'Codificado:', montoCoificado);
+                    return;
+                }
+                
+                // Si es igual o menor, está bien
+                if (monto === montoCoificado) {
+                    console.log('✓ Monto igual al codificado');
+                } else {
+                    console.log('✓ Monto menor al codificado');
+                }
+            } else {
+                console.warn('No se pudo obtener monto codificado:', dataMonto);
+                // Continuar sin validación si la API falla
+            }
+        } catch (error) {
+            console.error('Error al validar monto codificado:', error);
+            // Continuar sin validación si hay error en AJAX
+        }
+
         // Extraer códigos de los textos de los selects (formato: "CODIGO - DESCRIPCION")
         const organismoCodego = organismoText.split(' - ')[0] || '';
         const naturalezaCodigo = naturalezaText.split(' - ')[0] || '';

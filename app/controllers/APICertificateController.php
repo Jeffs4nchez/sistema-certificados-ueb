@@ -244,19 +244,61 @@ class APICertificateController {
             foreach ($data as $item) {
                 $detalleId = $item['detalle_id'] ?? null;
                 $cantidadLiquidacion = floatval($item['cantidad_liquidacion'] ?? 0);
+                $memorando = $item['memorando'] ?? '';
                 
                 if (!$detalleId) continue;
                 
                 try {
-                    $certificateModel->updateLiquidacion($detalleId, $cantidadLiquidacion);
-                    $guardadas++;
+                    // Actualizar liquidación y memorando directamente
+                    $query = "UPDATE detalle_certificados SET cantidad_liquidacion = ?, memorando = ? WHERE id = ?";
+                    $stmt = $this->db->prepare($query);
+                    error_log("API Guardando: detalle_id=$detalleId, cantidad=$cantidadLiquidacion, memorando=$memorando");
+                    
+                    if ($stmt->execute([$cantidadLiquidacion, $memorando, $detalleId])) {
+                        error_log("✓ API Guardado correctamente");
+                        $guardadas++;
+                    } else {
+                        error_log("✗ API Error al guardar");
+                    }
                 } catch (Exception $e) {
+                    error_log("API Error: " . $e->getMessage());
                     // Continuar con el siguiente item si hay error en uno
                     continue;
                 }
             }
             
             $this->jsonResponse(true, ['guardadas' => $guardadas], "Se guardaron $guardadas liquidaciones correctamente");
+        } catch (Exception $e) {
+            error_log("API saveLiquidacionesAction Error: " . $e->getMessage());
+            $this->jsonResponse(false, null, 'Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtener monto codificado de un item de presupuesto
+     */
+    public function getMontoCodicadoAction() {
+        $cod_programa = $_GET['cod_programa'] ?? null;
+        $cod_subprograma = $_GET['cod_subprograma'] ?? null;
+        $cod_proyecto = $_GET['cod_proyecto'] ?? null;
+        $cod_actividad = $_GET['cod_actividad'] ?? null;
+        $cod_fuente = $_GET['cod_fuente'] ?? null;
+        $cod_ubicacion = $_GET['cod_ubicacion'] ?? null;
+        $cod_item = $_GET['cod_item'] ?? null;
+        
+        if (!$cod_programa || !$cod_subprograma || !$cod_proyecto || !$cod_actividad || !$cod_fuente || !$cod_ubicacion || !$cod_item) {
+            $this->jsonResponse(false, null, 'Códigos incompletos');
+        }
+        
+        try {
+            $montoCoificado = $this->certificateItemModel->getMontoCoificado(
+                $cod_programa, $cod_subprograma, $cod_proyecto, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item
+            );
+            
+            $this->jsonResponse(true, [
+                'monto_codificado' => $montoCoificado,
+                'formateado' => number_format($montoCoificado, 2, '.', ',')
+            ]);
         } catch (Exception $e) {
             $this->jsonResponse(false, null, 'Error: ' . $e->getMessage());
         }

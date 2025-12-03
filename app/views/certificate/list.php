@@ -133,14 +133,15 @@ async function openLiquidacionModal(certificateId) {
                     <table class="table table-sm table-hover">
                         <thead style="background-color: #0B283F !important; color: white !important;">
                             <tr>
-                                <th style="width: 8%;">PG</th>
-                                <th style="width: 8%;">SP</th>
-                                <th style="width: 8%;">PY</th>
-                                <th style="width: 8%;">ACT</th>
-                                <th style="width: 8%;">ITEM</th>
-                                <th style="width: 10%;">Descripción</th>
-                                <th style="width: 12%;">Monto</th>
-                                <th style="width: 20%;">Liquidación</th>
+                                <th style="width: 6%;">PG</th>
+                                <th style="width: 6%;">SP</th>
+                                <th style="width: 6%;">PY</th>
+                                <th style="width: 6%;">ACT</th>
+                                <th style="width: 6%;">ITEM</th>
+                                <th style="width: 12%;">Descripción</th>
+                                <th style="width: 10%;">Monto</th>
+                                <th style="width: 15%;">Liquidación</th>
+                                <th style="width: 25%;">Memorando</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -160,6 +161,12 @@ async function openLiquidacionModal(certificateId) {
                             <input type="number" class="form-control form-control-sm liquidacion-input" 
                                    value="${parseFloat(item.cantidad_liquidacion || 0).toFixed(2)}"
                                    data-detalle-id="${item.id}" step="0.01" min="0">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm memorando-input" 
+                                   value="${item.memorando || ''}"
+                                   placeholder="Ej: Comprobante #123"
+                                   data-detalle-id="${item.id}" maxlength="255">
                         </td>
                     </tr>
                 `;
@@ -229,25 +236,39 @@ document.getElementById('btnGuardarLiquidaciones').addEventListener('click', asy
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
     
     try {
-        const inputs = document.querySelectorAll('.liquidacion-input');
+        const liquidacionInputs = document.querySelectorAll('.liquidacion-input');
+        const memorandoInputs = document.querySelectorAll('.memorando-input');
         const liquidaciones = [];
         
-        inputs.forEach(input => {
-            liquidaciones.push({
+        console.log('Total liquidacion inputs:', liquidacionInputs.length);
+        console.log('Total memorando inputs:', memorandoInputs.length);
+        
+        liquidacionInputs.forEach((input, index) => {
+            const memorandoInput = memorandoInputs[index];
+            const item = {
                 detalle_id: input.dataset.detalleId,
-                cantidad_liquidacion: parseFloat(input.value) || 0
-            });
+                cantidad_liquidacion: parseFloat(input.value) || 0,
+                memorando: memorandoInput.value || ''
+            };
+            console.log('Item ' + index + ':', item);
+            liquidaciones.push(item);
         });
+        
+        console.log('Liquidaciones a guardar:', liquidaciones);
         
         const formData = new FormData();
         formData.append('liquidaciones', JSON.stringify(liquidaciones));
+        
+        console.log('Enviando a:', 'index.php?action=api-certificate&action-api=save-liquidaciones');
         
         const response = await fetch('index.php?action=api-certificate&action-api=save-liquidaciones', {
             method: 'POST',
             body: formData
         });
         
+        console.log('Respuesta status:', response.status);
         const result = await response.json();
+        console.log('Respuesta JSON:', result);
         
         if (result.success) {
             btn.innerHTML = '<i class="fas fa-check"></i> Guardado';
@@ -263,6 +284,7 @@ document.getElementById('btnGuardarLiquidaciones').addEventListener('click', asy
             btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
         }
     } catch (error) {
+        console.error('Error en JavaScript:', error);
         alert('Error: ' + error.message);
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
