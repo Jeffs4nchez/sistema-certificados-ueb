@@ -128,7 +128,7 @@ class CertificateController {
                 if (is_array($items) && count($items) > 0) {
                     foreach ($items as $item) {
                         // Generar código completo: programa subprograma proyecto actividad fuente ubicacion item (con espacios)
-                        $codigoCompleto = implode(' ', [
+                        $codigoCompleto = trim(implode(' ', [
                             $item['programa_codigo'] ?? '',
                             $item['subprograma_codigo'] ?? '',
                             $item['proyecto_codigo'] ?? '',
@@ -136,7 +136,7 @@ class CertificateController {
                             $item['fuente_codigo'] ?? '',
                             $item['ubicacion_codigo'] ?? '',
                             $item['item_codigo'] ?? ''
-                        ]);
+                        ]));
                         
                         $detailData = [
                             'certificado_id' => (int)($item['certificado_id'] ?? $certificateId),
