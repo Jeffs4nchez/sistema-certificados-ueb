@@ -295,12 +295,29 @@ class CertificateController {
             }
             
             $guardadas = 0;
+            $certificadosActualizados = array();
+            
             foreach ($data as $item) {
                 $detalleId = $item['detalle_id'] ?? null;
                 $cantidadLiquidacion = floatval($item['cantidad_liquidacion'] ?? 0);
                 $memorando = $item['memorando'] ?? '';
                 
                 if (!$detalleId) continue;
+                
+                // Obtener el detalle completo
+                $queryGetDetalle = "SELECT certificado_id, cantidad_liquidacion, codigo_completo FROM detalle_certificados WHERE id = ?";
+                $stmtGetDetalle = $this->certificateModel->db->prepare($queryGetDetalle);
+                $stmtGetDetalle->execute([$detalleId]);
+                $detalle = $stmtGetDetalle->fetch();
+                $certificadoId = $detalle['certificado_id'] ?? null;
+                $codigoCompleto = $detalle['codigo_completo'] ?? null;
+                
+                // Obtener total_pendiente anterior
+                $queryGetCertAnterior = "SELECT total_pendiente FROM certificados WHERE id = ?";
+                $stmtGetCertAnterior = $this->certificateModel->db->prepare($queryGetCertAnterior);
+                $stmtGetCertAnterior->execute([$certificadoId]);
+                $certAnterior = $stmtGetCertAnterior->fetch();
+                $totalPendienteAnterior = floatval($certAnterior['total_pendiente'] ?? 0);
                 
                 // Actualizar liquidación y memorando en la base de datos
                 $query = "UPDATE detalle_certificados SET cantidad_liquidacion = ?, memorando = ? WHERE id = ?";
@@ -309,8 +326,60 @@ class CertificateController {
                 if ($stmt->execute([$cantidadLiquidacion, $memorando, $detalleId])) {
                     error_log("✓ Guardado correctamente");
                     $guardadas++;
+                    
+                    // Agregar certificado a la lista de actualizaciones
+                    if ($certificadoId && !in_array($certificadoId, $certificadosActualizados)) {
+                        $certificadosActualizados[] = $certificadoId;
+                    }
                 } else {
                     error_log("✗ Error al guardar");
+                }
+            }
+            
+            // Actualizar total_liquidado y total_pendiente en la tabla certificados
+            // para cada certificado que fue modificado
+            foreach ($certificadosActualizados as $certId) {
+                $queryUpdate = "UPDATE certificados 
+                    SET 
+                        total_liquidado = COALESCE((
+                            SELECT SUM(cantidad_liquidacion) 
+                            FROM detalle_certificados 
+                            WHERE certificado_id = ?
+                        ), 0),
+                        total_pendiente = monto_total - COALESCE((
+                            SELECT SUM(cantidad_liquidacion) 
+                            FROM detalle_certificados 
+                            WHERE certificado_id = ?
+                        ), 0)
+                    WHERE id = ?";
+                
+                $stmtUpdate = $this->certificateModel->db->prepare($queryUpdate);
+                if ($stmtUpdate->execute([$certId, $certId, $certId])) {
+                    error_log("✓ Total pendiente actualizado para certificado $certId");
+                    
+                    // Obtener el nuevo total_pendiente
+                    $queryGetCertNuevo = "SELECT total_pendiente FROM certificados WHERE id = ?";
+                    $stmtGetCertNuevo = $this->certificateModel->db->prepare($queryGetCertNuevo);
+                    $stmtGetCertNuevo->execute([$certId]);
+                    $certNuevo = $stmtGetCertNuevo->fetch();
+                    $totalPendienteNuevo = floatval($certNuevo['total_pendiente'] ?? 0);
+                    
+                    // Obtener codigo_completo para actualizar col4
+                    $queryGetCodigo = "SELECT codigo_completo FROM detalle_certificados WHERE certificado_id = ? LIMIT 1";
+                    $stmtGetCodigo = $this->certificateModel->db->prepare($queryGetCodigo);
+                    $stmtGetCodigo->execute([$certId]);
+                    $resultCodigo = $stmtGetCodigo->fetch();
+                    $codigoCompleto = $resultCodigo['codigo_completo'] ?? null;
+                    
+                    // Restar la cantidad liquidada de col4 e incrementar saldo_disponible
+                    if ($codigoCompleto && $totalPendienteNuevo > 0) {
+                        $queryUpdatePresupuesto = "UPDATE presupuesto_items SET col4 = COALESCE(col4, 0) - ?, saldo_disponible = COALESCE(saldo_disponible, 0) + ? WHERE codigo_completo = ?";
+                        $stmtUpdatePresupuesto = $this->certificateModel->db->prepare($queryUpdatePresupuesto);
+                        $stmtUpdatePresupuesto->execute([$totalPendienteNuevo, $totalPendienteNuevo, $codigoCompleto]);
+                        error_log("✓ Presupuesto actualizado: codigo=$codigoCompleto, col4-=$totalPendienteNuevo, saldo_disponible+=$totalPendienteNuevo");
+                    }
+                } else {
+                    error_log("✗ Error al actualizar total pendiente para certificado $certId");
                 }
             }
             

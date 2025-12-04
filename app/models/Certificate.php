@@ -15,7 +15,7 @@ class Certificate {
     }
 
     /**
-     * Obtener todos los certificados
+     * Obtener todos los certificados - totales en BD
      */
     public function getAll() {
         $stmt = $this->db->query("SELECT * FROM certificados ORDER BY id DESC");
@@ -23,7 +23,7 @@ class Certificate {
     }
 
     /**
-     * Obtener certificados por usuario (para operadores)
+     * Obtener certificados por usuario (para operadores) - totales en BD
      */
     public function getByUsuario($usuario_id) {
         $stmt = $this->db->prepare("SELECT * FROM certificados WHERE usuario_id = ? ORDER BY id DESC");
@@ -232,7 +232,6 @@ class Certificate {
 
     /**
      * Actualizar liquidación de un detalle
-     * (Los TRIGGERs en la BD se encargan de actualizar presupuesto_items y certificados automáticamente)
      */
     public function updateLiquidacion($detalle_id, $cantidad_liquidacion) {
         try {
@@ -245,23 +244,63 @@ class Certificate {
                 throw new Exception("Detalle no encontrado");
             }
             
-            $montoOriginal = (float)$detalle['monto'];
+            $certificado_id = (int)$detalle['certificado_id'];
+            $codigo_completo = $detalle['codigo_completo'];
+            $cantidad_anterior = (float)$detalle['cantidad_liquidacion'];
+            $diferencia_liquidacion = $cantidad_liquidacion - $cantidad_anterior;
             
-            // Calcular el nuevo monto (monto original - cantidad_liquidacion)
-            $nuevoMonto = $montoOriginal - $cantidad_liquidacion;
+            // Obtener total_pendiente anterior del certificado
+            $stmtCertAnterior = $this->db->prepare("SELECT total_pendiente FROM certificados WHERE id = ?");
+            $stmtCertAnterior->execute([$certificado_id]);
+            $certAnterior = $stmtCertAnterior->fetch();
+            $total_pendiente_anterior = (float)$certAnterior['total_pendiente'];
             
-            // Actualizar SOLO detalle_certificados con los nuevos valores
-            // Los TRIGGERs automáticamente actualizarán presupuesto_items y certificados
+            // Actualizar SOLO la cantidad_liquidacion
             $updateStmt = $this->db->prepare("
                 UPDATE detalle_certificados 
-                SET cantidad_liquidacion = ?, 
-                    monto = ?,
+                SET cantidad_liquidacion = ?,
                     fecha_actualizacion = NOW()
                 WHERE id = ?
             ");
-            $updateStmt->execute([$cantidad_liquidacion, $nuevoMonto, $detalle_id]);
+            $updateStmt->execute([$cantidad_liquidacion, $detalle_id]);
             
-            error_log("Liquidación actualizada: detalle_id=$detalle_id, cantidad_liquidacion=$cantidad_liquidacion, nuevo_monto=$nuevoMonto");
+            // Actualizar total_liquidado y total_pendiente en certificados
+            $updateCertStmt = $this->db->prepare("
+                UPDATE certificados 
+                SET 
+                    total_liquidado = COALESCE((
+                        SELECT SUM(cantidad_liquidacion) 
+                        FROM detalle_certificados 
+                        WHERE certificado_id = ?
+                    ), 0),
+                    total_pendiente = monto_total - COALESCE((
+                        SELECT SUM(cantidad_liquidacion) 
+                        FROM detalle_certificados 
+                        WHERE certificado_id = ?
+                    ), 0)
+                WHERE id = ?
+            ");
+            $updateCertStmt->execute([$certificado_id, $certificado_id, $certificado_id]);
+            
+            // Obtener el nuevo total_pendiente
+            $stmtCertNuevo = $this->db->prepare("SELECT total_pendiente FROM certificados WHERE id = ?");
+            $stmtCertNuevo->execute([$certificado_id]);
+            $certNuevo = $stmtCertNuevo->fetch();
+            $total_pendiente_nuevo = (float)$certNuevo['total_pendiente'];
+            
+            // Restar la cantidad liquidada de col4 e incrementar saldo_disponible en presupuesto_items
+            if ($codigo_completo && $cantidad_liquidacion > 0) {
+                $updatePresupuestoStmt = $this->db->prepare("
+                    UPDATE presupuesto_items 
+                    SET col4 = COALESCE(col4, 0) - ?,
+                        saldo_disponible = COALESCE(saldo_disponible, 0) + ?
+                    WHERE codigo_completo = ?
+                ");
+                $updatePresupuestoStmt->execute([$cantidad_liquidacion, $cantidad_liquidacion, $codigo_completo]);
+                error_log("Presupuesto actualizado: codigo=$codigo_completo, col4-=$cantidad_liquidacion, saldo_disponible+=$cantidad_liquidacion");
+            }
+            
+            error_log("Liquidación actualizada: detalle_id=$detalle_id, cantidad_liquidacion=$cantidad_liquidacion, certificado_id=$certificado_id, pendiente_anterior=$total_pendiente_anterior, pendiente_nuevo=$total_pendiente_nuevo");
             
             return true;
         } catch (Exception $e) {

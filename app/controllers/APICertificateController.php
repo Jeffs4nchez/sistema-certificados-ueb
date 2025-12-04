@@ -236,10 +236,11 @@ class APICertificateController {
             if (empty($data)) {
                 $this->jsonResponse(false, null, 'No hay liquidaciones para guardar');
             }
-            
+
             require_once __DIR__ . '/../models/Certificate.php';
             $certificateModel = new Certificate();
             $guardadas = 0;
+            $certificadosActualizados = array();
             
             foreach ($data as $item) {
                 $detalleId = $item['detalle_id'] ?? null;
@@ -249,6 +250,20 @@ class APICertificateController {
                 if (!$detalleId) continue;
                 
                 try {
+                    // Obtener el detalle completo
+                    $queryGetDetalle = "SELECT certificado_id, codigo_completo FROM detalle_certificados WHERE id = ?";
+                    $stmtGetDetalle = $this->db->prepare($queryGetDetalle);
+                    $stmtGetDetalle->execute([$detalleId]);
+                    $detalle = $stmtGetDetalle->fetch();
+                    $certificadoId = $detalle['certificado_id'] ?? null;
+                    
+                    // Obtener total_pendiente anterior
+                    $queryGetCertAnterior = "SELECT total_pendiente FROM certificados WHERE id = ?";
+                    $stmtGetCertAnterior = $this->db->prepare($queryGetCertAnterior);
+                    $stmtGetCertAnterior->execute([$certificadoId]);
+                    $certAnterior = $stmtGetCertAnterior->fetch();
+                    $totalPendienteAnterior = floatval($certAnterior['total_pendiente'] ?? 0);
+                    
                     // Actualizar liquidación y memorando directamente
                     $query = "UPDATE detalle_certificados SET cantidad_liquidacion = ?, memorando = ? WHERE id = ?";
                     $stmt = $this->db->prepare($query);
@@ -257,6 +272,11 @@ class APICertificateController {
                     if ($stmt->execute([$cantidadLiquidacion, $memorando, $detalleId])) {
                         error_log("✓ API Guardado correctamente");
                         $guardadas++;
+                        
+                        // Agregar certificado a la lista de actualizaciones
+                        if ($certificadoId && !in_array($certificadoId, $certificadosActualizados)) {
+                            $certificadosActualizados[] = $certificadoId;
+                        }
                     } else {
                         error_log("✗ API Error al guardar");
                     }
@@ -264,6 +284,53 @@ class APICertificateController {
                     error_log("API Error: " . $e->getMessage());
                     // Continuar con el siguiente item si hay error en uno
                     continue;
+                }
+            }
+            
+            // Actualizar total_liquidado y total_pendiente en la tabla certificados
+            // para cada certificado que fue modificado
+            foreach ($certificadosActualizados as $certId) {
+                $queryUpdate = "UPDATE certificados 
+                    SET 
+                        total_liquidado = COALESCE((
+                            SELECT SUM(cantidad_liquidacion) 
+                            FROM detalle_certificados 
+                            WHERE certificado_id = ?
+                        ), 0),
+                        total_pendiente = monto_total - COALESCE((
+                            SELECT SUM(cantidad_liquidacion) 
+                            FROM detalle_certificados 
+                            WHERE certificado_id = ?
+                        ), 0)
+                    WHERE id = ?";
+                
+                $stmtUpdate = $this->db->prepare($queryUpdate);
+                if ($stmtUpdate->execute([$certId, $certId, $certId])) {
+                    error_log("✓ API Total pendiente actualizado para certificado $certId");
+                    
+                    // Obtener el nuevo total_pendiente
+                    $queryGetCertNuevo = "SELECT total_pendiente FROM certificados WHERE id = ?";
+                    $stmtGetCertNuevo = $this->db->prepare($queryGetCertNuevo);
+                    $stmtGetCertNuevo->execute([$certId]);
+                    $certNuevo = $stmtGetCertNuevo->fetch();
+                    $totalPendienteNuevo = floatval($certNuevo['total_pendiente'] ?? 0);
+                    
+                    // Obtener codigo_completo del certificado
+                    $queryGetCodigo = "SELECT codigo_completo FROM detalle_certificados WHERE certificado_id = ? LIMIT 1";
+                    $stmtGetCodigo = $this->db->prepare($queryGetCodigo);
+                    $stmtGetCodigo->execute([$certId]);
+                    $resultCodigo = $stmtGetCodigo->fetch();
+                    $codigoCompleto = $resultCodigo['codigo_completo'] ?? null;
+                    
+                    // Restar la cantidad liquidada de col4 e incrementar saldo_disponible
+                    if ($codigoCompleto && $totalPendienteNuevo > 0) {
+                        $queryUpdatePresupuesto = "UPDATE presupuesto_items SET col4 = COALESCE(col4, 0) - ?, saldo_disponible = COALESCE(saldo_disponible, 0) + ? WHERE codigo_completo = ?";
+                        $stmtUpdatePresupuesto = $this->db->prepare($queryUpdatePresupuesto);
+                        $stmtUpdatePresupuesto->execute([$totalPendienteNuevo, $totalPendienteNuevo, $codigoCompleto]);
+                        error_log("✓ API Presupuesto actualizado: codigo=$codigoCompleto, col4-=$totalPendienteNuevo, saldo_disponible+=$totalPendienteNuevo");
+                    }
+                } else {
+                    error_log("✗ API Error al actualizar total pendiente para certificado $certId");
                 }
             }
             
