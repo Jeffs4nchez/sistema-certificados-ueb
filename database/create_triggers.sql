@@ -45,7 +45,7 @@ EXECUTE FUNCTION trigger_insert_detalle_certificados();
 
 -- ===============================================
 -- TRIGGER 2: Cuando se UPDATE cantidad_liquidacion
--- Actualiza col7 (Total Liquidado) en presupuesto_items
+-- Actualiza col4 y saldo_disponible en presupuesto_items
 -- ===============================================
 
 CREATE OR REPLACE FUNCTION trigger_update_liquidacion()
@@ -56,13 +56,12 @@ BEGIN
     -- Calcular la diferencia de liquidación (new - old)
     diferencia := NEW.cantidad_liquidacion - COALESCE(OLD.cantidad_liquidacion, 0);
     
-    -- Actualizar col4 (restar liquidación del certificado) y col7 (sumar liquidación)
+    -- Actualizar col4 (restar liquidación) y saldo_disponible (incrementar)
     UPDATE presupuesto_items
     SET col4 = COALESCE(col4, 0) - diferencia,
-        col7 = COALESCE(col7, 0) + diferencia,
-        col8 = COALESCE(col1, 0) - (COALESCE(col4, 0) - diferencia) - COALESCE(col5, 0) - COALESCE(col6, 0) - (COALESCE(col7, 0) + diferencia),
+        saldo_disponible = COALESCE(saldo_disponible, 0) + diferencia,
         fecha_actualizacion = NOW()
-    WHERE codigo_item = NEW.codigo_completo;
+    WHERE codigo_completo = NEW.codigo_completo;
     
     RETURN NEW;
 END;

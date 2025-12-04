@@ -14,6 +14,19 @@ if (!class_exists('Database')) {
     require_once DATABASE_CLASS;
 }
 
+// Limpiar y reinstalar triggers si no están instalados
+$triggerMarkerFile = __DIR__ . '/.triggers-installed';
+if (!file_exists($triggerMarkerFile)) {
+    $cleanupFile = __DIR__ . '/database/ejecutar_limpieza.php';
+    if (file_exists($cleanupFile)) {
+        // Capturar salida para no mostrar en pantalla
+        ob_start();
+        require_once $cleanupFile;
+        ob_end_clean();
+        touch($triggerMarkerFile); // Marcar que ya se instalaron
+    }
+}
+
 // Cargar modelos
 if (!class_exists('Usuario')) {
     require_once APP_PATH . '/models/Usuario.php';

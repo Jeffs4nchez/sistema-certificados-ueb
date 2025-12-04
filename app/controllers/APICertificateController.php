@@ -327,7 +327,7 @@ class APICertificateController {
                         $queryUpdatePresupuesto = "UPDATE presupuesto_items SET col4 = COALESCE(col4, 0) - ?, saldo_disponible = COALESCE(saldo_disponible, 0) + ? WHERE codigo_completo = ?";
                         $stmtUpdatePresupuesto = $this->db->prepare($queryUpdatePresupuesto);
                         $stmtUpdatePresupuesto->execute([$totalPendienteNuevo, $totalPendienteNuevo, $codigoCompleto]);
-                        error_log("✓ API Presupuesto actualizado: codigo=$codigoCompleto, col4-=$totalPendienteNuevo, saldo_disponible+=$totalPendienteNuevo");
+                        error_log("✓ [API] Presupuesto actualizado: codigo=$codigoCompleto, col4-=$totalPendienteNuevo, saldo_disponible+=$totalPendienteNuevo");
                     }
                 } else {
                     error_log("✗ API Error al actualizar total pendiente para certificado $certId");

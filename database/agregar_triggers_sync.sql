@@ -4,10 +4,10 @@
 CREATE OR REPLACE FUNCTION trg_sync_col4_on_insert()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Actualizar presupuesto_items.col4 (sumar el nuevo monto)
+    -- Actualizar presupuesto_items.col4 con el monto del item (SIN SUMAR con otros)
     UPDATE presupuesto_items
-    SET col4 = COALESCE(col4, 0) + NEW.monto,
-        col8 = COALESCE(col1, 0) - (COALESCE(col4, 0) + NEW.monto),
+    SET col4 = NEW.monto,
+        col8 = COALESCE(col1, 0) - NEW.monto,
         fecha_actualizacion = NOW()
     WHERE codigo_completo = NEW.codigo_completo;
     
@@ -27,19 +27,13 @@ EXECUTE FUNCTION trg_sync_col4_on_insert();
 -- ===============================================
 CREATE OR REPLACE FUNCTION trg_sync_col4_on_update()
 RETURNS TRIGGER AS $$
-DECLARE
-    diferencia NUMERIC;
 BEGIN
-    -- Si cambió el monto, actualizar presupuesto_items
-    IF NEW.monto != OLD.monto THEN
-        diferencia := NEW.monto - OLD.monto;
-        
-        UPDATE presupuesto_items
-        SET col4 = COALESCE(col4, 0) + diferencia,
-            col8 = COALESCE(col1, 0) - (COALESCE(col4, 0) + diferencia),
-            fecha_actualizacion = NOW()
-        WHERE codigo_completo = NEW.codigo_completo;
-    END IF;
+    -- Actualizar presupuesto_items.col4 directamente con el nuevo monto (SIN SUMAR)
+    UPDATE presupuesto_items
+    SET col4 = NEW.monto,
+        col8 = COALESCE(col1, 0) - NEW.monto,
+        fecha_actualizacion = NOW()
+    WHERE codigo_completo = NEW.codigo_completo;
     
     RETURN NEW;
 END;
@@ -58,10 +52,10 @@ EXECUTE FUNCTION trg_sync_col4_on_update();
 CREATE OR REPLACE FUNCTION trg_sync_col4_on_delete()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Revertir el monto de presupuesto_items
+    -- Revertir col4 a 0 cuando se elimina el detalle
     UPDATE presupuesto_items
-    SET col4 = COALESCE(col4, 0) - OLD.monto,
-        col8 = COALESCE(col1, 0) - (COALESCE(col4, 0) - OLD.monto),
+    SET col4 = 0,
+        col8 = COALESCE(col1, 0),
         fecha_actualizacion = NOW()
     WHERE codigo_completo = OLD.codigo_completo;
     
