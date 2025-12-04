@@ -197,7 +197,13 @@ class Certificate {
      * Eliminar certificado
      */
     public function delete($id) {
-        $stmt = $this->db->prepare("DELETE FROM detalle_certificados WHERE id = ?");
+        // Primero: obtener todos los items del certificado
+        // Los triggers se ejecutarán al eliminar cada item
+        $stmt = $this->db->prepare("DELETE FROM detalle_certificados WHERE certificado_id = ?");
+        $stmt->execute([$id]);
+        
+        // Segundo: eliminar el certificado maestro
+        $stmt = $this->db->prepare("DELETE FROM certificados WHERE id = ?");
         return $stmt->execute([$id]);
     }
 

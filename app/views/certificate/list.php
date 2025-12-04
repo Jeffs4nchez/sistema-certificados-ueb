@@ -48,6 +48,8 @@
                                 <th>Usuario</th>
                                 <th>Fecha</th>
                                 <th>Monto Total</th>
+                                <th>Liquidado</th>
+                                <th>Pendiente</th>
                                 <th style="width: 150px;">Acciones</th>
                             </tr>
                         </thead>
@@ -60,6 +62,8 @@
                                     <td><?php echo htmlspecialchars($cert['usuario_creacion'] ?? 'Sistema'); ?></td>
                                     <td><?php echo date('d/m/Y', strtotime($cert['fecha_elaboracion'] ?? '2025-01-01')); ?></td>
                                     <td class="text-end">$ <?php echo number_format($cert['monto_total'] ?? 0, 2, ',', '.'); ?></td>
+                                    <td class="text-end text-success fw-bold">$ <?php echo number_format($cert['total_liquidado'] ?? 0, 2, ',', '.'); ?></td>
+                                    <td class="text-end text-warning fw-bold">$ <?php echo number_format($cert['total_pendiente'] ?? 0, 2, ',', '.'); ?></td>
                                     <td style="white-space: nowrap; vertical-align: middle;">
                                         <a href="index.php?action=certificate-view&id=<?php echo $cert['id']; ?>" 
                                            class="btn btn-sm btn-outline-primary" title="Ver" style="display: inline-block; margin: 2px;">
