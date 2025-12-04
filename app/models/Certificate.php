@@ -317,18 +317,27 @@ class Certificate {
      * Obtener totales globales de monto y liquidado
      */
     public function getTotalsGlobal() {
+        // Obtener monto_total de certificados (sin duplicar por items)
         $stmt = $this->db->prepare("
-            SELECT 
-                COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado,
-                COALESCE(SUM(c.monto_total), 0) as total_monto
-            FROM certificados c
-            LEFT JOIN detalle_certificados dc ON c.id = dc.certificado_id
+            SELECT COALESCE(SUM(monto_total), 0) as total_monto
+            FROM certificados
         ");
         $stmt->execute();
         $row = $stmt->fetch();
+        $total_monto = $row['total_monto'] ?? 0;
+        
+        // Obtener total liquidado de detalles
+        $stmt = $this->db->prepare("
+            SELECT COALESCE(SUM(cantidad_liquidacion), 0) as total_liquidado
+            FROM detalle_certificados
+        ");
+        $stmt->execute();
+        $row = $stmt->fetch();
+        $total_liquidado = $row['total_liquidado'] ?? 0;
+        
         return [
-            'total_monto' => $row['total_monto'] ?? 0,
-            'total_liquidado' => $row['total_liquidado'] ?? 0
+            'total_monto' => $total_monto,
+            'total_liquidado' => $total_liquidado
         ];
     }
 
@@ -336,20 +345,30 @@ class Certificate {
      * Obtener totales de monto y liquidado por operador
      */
     public function getTotalsByOperador($usuario_nombre) {
+        // Obtener monto_total de certificados por operador (sin duplicar por items)
         $stmt = $this->db->prepare("
-            SELECT 
-                COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado,
-                COALESCE(SUM(c.monto_total), 0) as total_monto
-            FROM certificados c
-            LEFT JOIN detalle_certificados dc ON c.id = dc.certificado_id
-            WHERE c.usuario_creacion = ?
-            GROUP BY c.usuario_creacion
+            SELECT COALESCE(SUM(monto_total), 0) as total_monto
+            FROM certificados
+            WHERE usuario_creacion = ?
         ");
         $stmt->execute([$usuario_nombre]);
         $row = $stmt->fetch();
+        $total_monto = $row['total_monto'] ?? 0;
+        
+        // Obtener total liquidado de detalles del operador
+        $stmt = $this->db->prepare("
+            SELECT COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado
+            FROM detalle_certificados dc
+            INNER JOIN certificados c ON dc.certificado_id = c.id
+            WHERE c.usuario_creacion = ?
+        ");
+        $stmt->execute([$usuario_nombre]);
+        $row = $stmt->fetch();
+        $total_liquidado = $row['total_liquidado'] ?? 0;
+        
         return [
-            'total_monto' => $row['total_monto'] ?? 0,
-            'total_liquidado' => $row['total_liquidado'] ?? 0
+            'total_monto' => $total_monto,
+            'total_liquidado' => $total_liquidado
         ];
     }
 }
