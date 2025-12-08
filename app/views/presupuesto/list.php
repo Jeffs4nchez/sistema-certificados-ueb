@@ -169,6 +169,9 @@
                     <table class="table table-hover mb-0">
                         <thead style="background-color: #0B283F !important; color: white !important;">
                             <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="selectAll" class="form-check-input" onchange="toggleAllCheckboxes(this)">
+                                </th>
                                 <th style="width: 50px;">#</th>
                                 <th>Código Programa</th>
                                 <th>Código Actividad</th>
@@ -197,6 +200,9 @@
                                     data-programa="<?php echo htmlspecialchars($item['codigog1']); ?>"
                                     data-actividad="<?php echo htmlspecialchars($item['codigog2']); ?>"
                                     data-fuente="<?php echo htmlspecialchars($item['codigog3']); ?>">
+                                    <td>
+                                        <input type="checkbox" class="form-check-input presupuesto-checkbox" data-id="<?php echo $item['id']; ?>">
+                                    </td>
                                     <td class="text-muted small"><?php echo htmlspecialchars($item['id']); ?></td>
                                     <td>
                                         <strong><?php echo htmlspecialchars($item['codigog1']); ?></strong>
@@ -242,9 +248,147 @@
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Panel de acciones para registros seleccionados -->
+    <div id="selectedActionsPanel" class="mt-3 p-3 bg-light border rounded d-none">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <span class="badge bg-info me-2" id="selectedCount">0 seleccionados</span>
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSelectedPresupuestos()" title="Eliminar seleccionados">
+                    <i class="fas fa-trash"></i> Eliminar seleccionados
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para borrado múltiple -->
+<div class="modal fade" id="deleteMultipleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación múltiple</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar los <strong id="confirmDeleteCount">0</strong> presupuestos seleccionados?</p>
+                <p class="text-danger small"><i class="fas fa-info-circle"></i> Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteSelected()">Eliminar</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+// Función para alternar todos los checkboxes
+function toggleAllCheckboxes(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.presupuesto-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateSelectedPanel();
+}
+
+// Función para actualizar el panel de seleccionados
+function updateSelectedPanel() {
+    const checkboxes = document.querySelectorAll('.presupuesto-checkbox:checked');
+    const panel = document.getElementById('selectedActionsPanel');
+    const count = document.getElementById('selectedCount');
+    
+    if (checkboxes.length > 0) {
+        count.textContent = checkboxes.length + ' seleccionado' + (checkboxes.length !== 1 ? 's' : '');
+        panel.classList.remove('d-none');
+    } else {
+        panel.classList.add('d-none');
+        document.getElementById('selectAll').checked = false;
+    }
+}
+
+// Agregar event listeners a los checkboxes individuales
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.presupuesto-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedPanel);
+    });
+});
+
+// Función para mostrar confirmación de borrado múltiple
+function deleteSelectedPresupuestos() {
+    const checkboxes = document.querySelectorAll('.presupuesto-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Por favor selecciona al menos un presupuesto');
+        return;
+    }
+    
+    document.getElementById('confirmDeleteCount').textContent = checkboxes.length;
+    const modal = new bootstrap.Modal(document.getElementById('deleteMultipleModal'));
+    modal.show();
+}
+
+// Función para confirmar y ejecutar el borrado múltiple
+function confirmDeleteSelected() {
+    const checkboxes = document.querySelectorAll('.presupuesto-checkbox:checked');
+    
+    const toDelete = Array.from(checkboxes).map(cb => ({
+        id: cb.dataset.id
+    }));
+    
+    let deletedCount = 0;
+    let errorCount = 0;
+    let currentIndex = 0;
+    
+    const deleteNextItem = () => {
+        if (currentIndex >= toDelete.length) {
+            if (deletedCount + errorCount === toDelete.length) {
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+            }
+            return;
+        }
+        
+        const item = toDelete[currentIndex];
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'index.php?action=presupuesto-delete&id=' + item.id;
+        form.style.display = 'none';
+        
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+        
+        document.body.appendChild(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form)
+        })
+        .then(() => {
+            deletedCount++;
+        })
+        .catch(error => {
+            console.error('Error deleting presupuesto:', error);
+            errorCount++;
+        })
+        .finally(() => {
+            form.remove();
+            currentIndex++;
+            deleteNextItem();
+        });
+    };
+    
+    deleteNextItem();
+    
+    bootstrap.Modal.getInstance(document.getElementById('deleteMultipleModal')).hide();
+}
+
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const filterPrograma = document.getElementById('filterPrograma').value;

@@ -222,4 +222,83 @@ class Parameter {
         $stmt = $this->db->query("SELECT DISTINCT cod_nprest AS codigo, desc_nprest AS descripcion FROM estructura_presupuestaria ORDER BY cod_nprest");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Obtener un parámetro por ID y tipo
+     * Los parámetros se obtienen desde la tabla plana (estructura_presupuestaria)
+     * El ID corresponde al número de fila en la tabla cuando se extraen DISTINCT
+     */
+    public function getParameterById($id, $type) {
+        $map = [
+            'PG' => ['codigo' => 'cod_programa', 'descripcion' => 'desc_programa'],
+            'SP' => ['codigo' => 'cod_subprograma', 'descripcion' => 'desc_subprograma'],
+            'PY' => ['codigo' => 'cod_proyecto', 'descripcion' => 'desc_proyecto'],
+            'ACT' => ['codigo' => 'cod_actividad', 'descripcion' => 'desc_actividad'],
+            'ITEM' => ['codigo' => 'cod_item', 'descripcion' => 'desc_item'],
+            'UBG' => ['codigo' => 'cod_ubicacion', 'descripcion' => 'desc_ubicacion'],
+            'FTE' => ['codigo' => 'cod_fuente', 'descripcion' => 'desc_fuente'],
+            'ORG' => ['codigo' => 'cod_organismo', 'descripcion' => 'desc_organismo'],
+            'N.PREST' => ['codigo' => 'cod_nprest', 'descripcion' => 'desc_nprest']
+        ];
+        
+        if (!isset($map[$type])) {
+            return null;
+        }
+        
+        $codigo_col = $map[$type]['codigo'];
+        $descripcion_col = $map[$type]['descripcion'];
+        
+        // Obtener el parámetro por ID (que es el número asignado cuando se extraen DISTINCT)
+        $stmt = $this->db->query("SELECT DISTINCT $codigo_col AS codigo, $descripcion_col AS descripcion FROM estructura_presupuestaria WHERE $codigo_col IS NOT NULL AND TRIM($codigo_col) <> '' AND $descripcion_col IS NOT NULL AND TRIM($descripcion_col) <> '' ORDER BY $codigo_col ASC");
+        
+        $row_num = 1;
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if ($row_num == $id) {
+                $row['id'] = $id;
+                $row['tipo'] = $type;
+                return $row;
+            }
+            $row_num++;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Eliminar un parámetro (todos los registros con ese código en la tabla plana)
+     */
+    public function deleteParameter($id, $type) {
+        $map = [
+            'PG' => ['codigo' => 'cod_programa'],
+            'SP' => ['codigo' => 'cod_subprograma'],
+            'PY' => ['codigo' => 'cod_proyecto'],
+            'ACT' => ['codigo' => 'cod_actividad'],
+            'ITEM' => ['codigo' => 'cod_item'],
+            'UBG' => ['codigo' => 'cod_ubicacion'],
+            'FTE' => ['codigo' => 'cod_fuente'],
+            'ORG' => ['codigo' => 'cod_organismo'],
+            'N.PREST' => ['codigo' => 'cod_nprest']
+        ];
+        
+        if (!isset($map[$type])) {
+            throw new Exception('Tipo de parámetro inválido.');
+        }
+        
+        // Primero obtener el parámetro para saber cuál código eliminar
+        $parametro = $this->getParameterById($id, $type);
+        if (!$parametro) {
+            throw new Exception('Parámetro no encontrado.');
+        }
+        
+        $codigo_col = $map[$type]['codigo'];
+        $codigo = $parametro['codigo'];
+        
+        // Eliminar TODOS los registros con ese código de la tabla plana
+        $stmt = $this->db->prepare("DELETE FROM estructura_presupuestaria WHERE $codigo_col = ?");
+        if (!$stmt->execute([$codigo])) {
+            throw new Exception('Error al eliminar parámetro de la base de datos.');
+        }
+        
+        return true;
+    }
 }

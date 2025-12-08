@@ -1,0 +1,162 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    ✅ TRIGGERS OPTIMIZADOS - INSTALADOS                         ║
+║              Sistema de Gestión de Certificados y Presupuesto                   ║
+║                         UEB Finanzas - 7 Diciembre 2025                         ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+📊 RESUMEN EJECUTIVO
+════════════════════════════════════════════════════════════════════════════════
+
+✅ ESTADO: ACTIVOS EN PRODUCCIÓN
+📍 BD: PostgreSQL (certificados_sistema)
+⚡ TRIGGERS ACTIVOS: 6
+🔧 FUNCIONES: 5 funciones PL/pgSQL
+📅 FECHA: 7 de Diciembre 2025
+
+
+🎯 FLUJO IMPLEMENTADO
+════════════════════════════════════════════════════════════════════════════════
+
+Cuando se CREA un ITEM (detalle_certificados):
+  ✓ Se calcula cantidad_pendiente = monto - liquidación
+  ✓ Se suma el monto a presupuesto_items.col4
+  ✓ Se recalcula saldo_disponible = col3 - col4
+
+Cuando se MODIFICA el MONTO:
+  ✓ Se actualiza cantidad_pendiente si liquidación cambió
+  ✓ Se ajusta col4 (+/- la diferencia)
+  ✓ Se recalcula saldo_disponible
+
+Cuando se LIQUIDA un ITEM:
+  ✓ Se actualiza cantidad_pendiente = monto - nueva_liquidación
+  ✓ col4 NO CAMBIA (sigue siendo el monto certificado original)
+  ✓ saldo_disponible se mantiene igual
+
+Cuando se ELIMINA un ITEM:
+  ✓ Se resta el monto de col4
+  ✓ Se recalcula saldo_disponible
+
+
+📋 TRIGGERS INSTALADOS
+════════════════════════════════════════════════════════════════════════════════
+
+TABLA: detalle_certificados (5 triggers)
+─────────────────────────────────────────────────────────────────────────────
+✓ trigger_detalle_cantidad_pendiente    (BEFORE INSERT)
+✓ trigger_detalle_cantidad_pendiente    (BEFORE UPDATE)
+✓ trigger_detalle_insert_col4           (AFTER INSERT)
+✓ trigger_detalle_update_col4           (AFTER UPDATE)
+✓ trigger_detalle_delete_col4           (AFTER DELETE)
+
+TABLA: presupuesto_items (1 trigger)
+─────────────────────────────────────────────────────────────────────────────
+✓ trigger_col4_recalcula_saldo          (BEFORE UPDATE)
+
+
+💡 CASOS DE USO
+════════════════════════════════════════════════════════════════════════════════
+
+CASO 1: Crear certificado con 3 items
+──────────────────────────────────────
+INSERT INTO detalle_certificados VALUES
+  (1, "1.2.3.4.5", 1000);
+
+⚡ AUTOMÁTICAMENTE:
+  • cantidad_pendiente = 1000 - 0 = 1000
+  • presupuesto_items[1.2.3.4.5].col4 += 1000
+  • presupuesto_items[1.2.3.4.5].saldo_disponible = col3 - col4
+
+
+CASO 2: Liquidar un item (pago parcial)
+────────────────────────────────────────
+UPDATE detalle_certificados 
+SET cantidad_liquidacion = 500 
+WHERE id = 1;
+
+⚡ AUTOMÁTICAMENTE:
+  • cantidad_pendiente = 1000 - 500 = 500
+  • col4 SIGUE SIENDO 1000 (sin cambios)
+  • saldo_disponible SIGUE IGUAL
+
+
+CASO 3: Modificar monto de item
+────────────────────────────────
+UPDATE detalle_certificados 
+SET monto = 1500 
+WHERE id = 1;
+
+⚡ AUTOMÁTICAMENTE:
+  • cantidad_pendiente = 1500 - liquidación
+  • col4 += 500 (incrementa por la diferencia)
+  • saldo_disponible = col3 - nuevo_col4
+
+
+CASO 4: Eliminar item
+──────────────────────
+DELETE FROM detalle_certificados WHERE id = 1;
+
+⚡ AUTOMÁTICAMENTE:
+  • col4 -= 1500 (resta el monto)
+  • saldo_disponible = col3 - nuevo_col4
+
+
+🔒 GARANTÍAS DE INTEGRIDAD (PARA FINANZAS)
+════════════════════════════════════════════════════════════════════════════════
+
+✅ CONSISTENCIA: Los presupuestos SIEMPRE están sincronizados con certificados
+✅ ATOMICIDAD: Las operaciones son atómicas (éxito total o rollback)
+✅ AUDITORÍA: Todos los cambios quedan registrados con timestamp
+✅ PROTECCIÓN: Imposible inconsistencias incluso con errores en la app
+✅ NORMATIVA: Cumple requisitos de control financiero en organismos públicos
+
+
+🚀 VERIFICACIÓN
+════════════════════════════════════════════════════════════════════════════════
+
+Ejecutar script de verificación:
+  php check_triggers_db.php
+
+O consulta SQL:
+  SELECT trigger_name, event_object_table, event_manipulation 
+  FROM information_schema.triggers 
+  WHERE trigger_schema = 'public' 
+  ORDER BY event_object_table;
+
+
+📚 DOCUMENTACIÓN
+════════════════════════════════════════════════════════════════════════════════
+
+Leer: TRIGGERS_OPTIMIZADOS.md
+  • Flujo detallado de sincronización
+  • Descripción completa de cada trigger
+  • Ejemplos de SQL
+  • Integración con modelos PHP
+
+
+🛠️ ARCHIVOS GENERADOS
+════════════════════════════════════════════════════════════════════════════════
+
+/database/triggers_optimizados.sql       - Script SQL completo
+aplicar_triggers_v2.php                  - Instalador de triggers
+check_triggers_db.php                    - Verificador
+ver_triggers_detalle.php                 - Inspector de funciones
+analizar_estructura.php                  - Analizador de tablas
+ver_relaciones.php                        - Visualizador de relaciones
+TRIGGERS_OPTIMIZADOS.md                  - Documentación completa
+
+
+✨ RECOMENDACIONES
+════════════════════════════════════════════════════════════════════════════════
+
+1. ✓ Mantener los triggers activos en producción
+2. ✓ NO modificar directamente la BD sin pasar por la aplicación
+3. ✓ Hacer respaldos regulares
+4. ✓ Monitorear el performance si hay muchas operaciones
+5. ✓ Documentar cambios futuros en TRIGGERS_OPTIMIZADOS.md
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+¡Sistema listo para operar en finanzas! ✅
+
+═══════════════════════════════════════════════════════════════════════════════

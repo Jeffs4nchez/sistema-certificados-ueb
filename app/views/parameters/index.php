@@ -299,14 +299,26 @@ function confirmDeleteSelected() {
         tipo: cb.dataset.tipo
     }));
     
-    // Realizar borrados individuales
+    // Realizar borrados individuales de manera secuencial
     let deletedCount = 0;
     let errorCount = 0;
+    let currentIndex = 0;
     
-    toDelete.forEach(item => {
+    const deleteNextItem = () => {
+        if (currentIndex >= toDelete.length) {
+            // Todos completados
+            if (deletedCount + errorCount === toDelete.length) {
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+            }
+            return;
+        }
+        
+        const item = toDelete[currentIndex];
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = 'index.php?action=parameter-delete&id=' + item.id + '&tipo=' + item.tipo;
+        form.action = 'index.php?action=parameter-delete&id=' + item.id + '&tipo=' + encodeURIComponent(item.tipo);
         form.style.display = 'none';
         
         const methodInput = document.createElement('input');
@@ -325,20 +337,19 @@ function confirmDeleteSelected() {
         .then(() => {
             deletedCount++;
         })
-        .catch(() => {
+        .catch(error => {
+            console.error('Error deleting parameter:', error);
             errorCount++;
         })
         .finally(() => {
             form.remove();
-            
-            // Si es el último, recargar
-            if (deletedCount + errorCount === toDelete.length) {
-                setTimeout(() => {
-                    location.reload();
-                }, 500);
-            }
+            currentIndex++;
+            deleteNextItem(); // Llamar recursivamente para el siguiente
         });
-    });
+    };
+    
+    // Iniciar el proceso
+    deleteNextItem();
     
     // Cerrar modal
     bootstrap.Modal.getInstance(document.getElementById('deleteMultipleModal')).hide();

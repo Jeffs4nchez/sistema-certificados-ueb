@@ -1,0 +1,194 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║           ✅ SINCRONIZACIÓN SIN TRIGGERS - IMPLEMENTADA EN PHP                   ║
+║              Sistema de Gestión de Certificados y Presupuesto                    ║
+║                         UEB Finanzas - 7 Diciembre 2025                          ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+📝 CAMBIOS REALIZADOS
+════════════════════════════════════════════════════════════════════════════════
+
+✅ 1. CERTIFICATE.PHP - MÉTODO createDetail()
+──────────────────────────────────────────────────────────────────────────────
+Ahora hace AMBAS operaciones:
+
+A) Inserta en detalle_certificados con:
+   • monto = el monto del item
+   • cantidad_pendiente = monto (inicial, sin liquidar)
+   • cantidad_liquidacion = 0 (inicial)
+   
+B) Actualiza presupuesto_items:
+   • col4 = col4 + monto
+   • saldo_disponible = col3 - col4
+
+ANTES: Solo insertaba en detalle_certificados
+AHORA: Además sincroniza presupuesto_items automáticamente
+
+
+✅ 2. CERTIFICATECONTROLLER.PHP - MÉTODO createAction()
+──────────────────────────────────────────────────────────────────────────────
+Después de crear todos los items, ahora:
+
+• Actualiza certificados.total_pendiente = monto_total
+  (Garantiza que al inicio, todo está pendiente de cobrar)
+
+ANTES: No actualizaba total_pendiente
+AHORA: Sincroniza el total_pendiente con monto_total
+
+
+✅ 3. CERTIFICATE.PHP - NUEVO MÉTODO updateDetailLiquidacion()
+──────────────────────────────────────────────────────────────────────────────
+Nuevo método para cuando se liquida un item:
+
+public function updateDetailLiquidacion($id, $cantidadLiquidacion) {
+    // Calcula cantidad_pendiente = monto - cantidad_liquidacion
+    // Actualiza ambos campos en detalle_certificados
+}
+
+USO: Cuando el usuario paga parcialmente un item
+BENEFICIO: Mantiene sincronizado cantidad_pendiente automáticamente
+
+
+════════════════════════════════════════════════════════════════════════════════
+🎯 FLUJO RESULTANTE
+════════════════════════════════════════════════════════════════════════════════
+
+┌─ CREAR CERTIFICADO CON ITEMS ─────────────────────────────────────────────┐
+│                                                                              │
+│  certificados (INSERT):                                                     │
+│    monto_total = SUM(items)                                                │
+│    total_pendiente = monto_total  ← Actualizado por controller              │
+│                                                                              │
+│  detalle_certificados (INSERT x 3):                                        │
+│    Item 1: monto=1000, cantidad_pendiente=1000, liquidacion=0  ← createDetail
+│    Item 2: monto=800, cantidad_pendiente=800, liquidacion=0    ← createDetail
+│    Item 3: monto=700, cantidad_pendiente=700, liquidacion=0    ← createDetail
+│                                                                              │
+│  presupuesto_items (UPDATE):                                               │
+│    col4 += 1000  ← createDetail Item 1                                     │
+│    col4 += 800   ← createDetail Item 2                                     │
+│    col4 += 700   ← createDetail Item 3                                     │
+│    saldo_disponible = col3 - col4  ← Se recalcula cada vez                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ LIQUIDAR UN ITEM ────────────────────────────────────────────────────────┐
+│                                                                            │
+│  detalle_certificados (UPDATE):                                          │
+│    cantidad_liquidacion = 500                                             │
+│    cantidad_pendiente = 1000 - 500 = 500  ← updateDetailLiquidacion      │
+│                                                                            │
+│  presupuesto_items: SIN CAMBIOS                                           │
+│    col4 sigue siendo 2500 (el monto certificado total)                   │
+│    saldo_disponible = col3 - 2500                                         │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+════════════════════════════════════════════════════════════════════════════════
+📋 TABLA DE SINCRONIZACIÓN
+════════════════════════════════════════════════════════════════════════════════
+
+OPERACIÓN                  TABLA                    ACCIÓN
+─────────────────────────────────────────────────────────────────────────────
+Crear Item                 detalle_certificados    INSERT monto, cantidad_pendiente=monto
+                           presupuesto_items       UPDATE col4 += monto
+
+Liquidar Item              detalle_certificados    UPDATE cantidad_liquidacion, recalcula pendiente
+                           presupuesto_items       SIN CAMBIOS (col4 permanece igual)
+
+Modificar Monto Item       detalle_certificados    UPDATE monto, recalcula pendiente
+                           presupuesto_items       UPDATE col4 por diferencia
+                           certificados            UPDATE monto_total
+
+Eliminar Item              detalle_certificados    DELETE
+                           presupuesto_items       UPDATE col4 -= monto
+
+Crear Certificado          certificados            INSERT, UPDATE total_pendiente = monto_total
+                           (+ items)               (ver crear item)
+
+
+════════════════════════════════════════════════════════════════════════════════
+✅ GARANTÍAS DE INTEGRIDAD
+════════════════════════════════════════════════════════════════════════════════
+
+✓ MONTOS SINCRONIZADOS:
+  • presupuesto_items.col4 = SUM(detalle_certificados.monto) por codigo_completo
+  • certificados.monto_total = SUM(detalle_certificados.monto)
+  • certificados.total_pendiente = monto_total (al inicio)
+
+✓ SALDO DISPONIBLE:
+  • presupuesto_items.saldo_disponible = col3 - col4
+  • Se recalcula en cada UPDATE
+
+✓ CANTIDAD PENDIENTE:
+  • detalle_certificados.cantidad_pendiente = monto - cantidad_liquidacion
+  • Se calcula automáticamente en createDetail y updateDetailLiquidacion
+
+✓ AUDITORÍA:
+  • Todos los campos tienen fecha_actualizacion
+  • Todos los cambios quedan registrados
+
+
+════════════════════════════════════════════════════════════════════════════════
+🚀 PRUEBAS RECOMENDADAS
+════════════════════════════════════════════════════════════════════════════════
+
+1. Crear certificado con 3 items
+   ✓ Verificar que certificados.monto_total = suma items
+   ✓ Verificar que certificados.total_pendiente = monto_total
+   ✓ Verificar que presupuesto_items.col4 += montos
+
+2. Liquidar un item con pago parcial
+   ✓ Verificar que cantidad_liquidacion se guarda
+   ✓ Verificar que cantidad_pendiente se recalcula
+   ✓ Verificar que presupuesto_items.col4 NO cambia
+
+3. Modificar monto de un item
+   ✓ Verificar que presupuesto_items.col4 se ajusta
+   ✓ Verificar que certificados.monto_total se recalcula
+   ✓ Verificar que cantidad_pendiente se actualiza
+
+4. Eliminar un item
+   ✓ Verificar que presupuesto_items.col4 se reduce
+   ✓ Verificar que certificados.monto_total se recalcula
+
+
+════════════════════════════════════════════════════════════════════════════════
+📁 ARCHIVOS MODIFICADOS
+════════════════════════════════════════════════════════════════════════════════
+
+✓ app/models/Certificate.php
+  └─ createDetail(): Ahora sincroniza presupuesto_items
+  └─ NEW updateDetailLiquidacion(): Para liquidaciones
+
+✓ app/controllers/CertificateController.php
+  └─ createAction(): Ahora actualiza total_pendiente
+
+
+════════════════════════════════════════════════════════════════════════════════
+📚 DOCUMENTACIÓN
+════════════════════════════════════════════════════════════════════════════════
+
+Leer: FLUJO_SINCRONIZACION_PHP.md
+  • Flujo detallado paso a paso
+  • Ejemplos de código
+  • Casos de uso completos
+  • Estructura de tablas
+
+
+════════════════════════════════════════════════════════════════════════════════
+💡 NOTAS IMPORTANTES
+════════════════════════════════════════════════════════════════════════════════
+
+1. NO hay triggers - todo se maneja en PHP (más control)
+2. Cada operación de item actualiza presupuesto_items automáticamente
+3. Las liquidaciones NO afectan col4 (que es el monto certificado)
+4. El saldo disponible siempre = col3 - col4
+5. La cantidad_pendiente = monto - liquidado
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+¡Sistema listo para sincronización manual en PHP! ✅
+
+════════════════════════════════════════════════════════════════════════════════

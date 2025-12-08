@@ -144,8 +144,9 @@ async function openLiquidacionModal(certificateId) {
                                 <th style="width: 6%;">ITEM</th>
                                 <th style="width: 12%;">Descripción</th>
                                 <th style="width: 10%;">Monto</th>
-                                <th style="width: 15%;">Liquidación</th>
-                                <th style="width: 25%;">Memorando</th>
+                                <th style="width: 12%;">Liquidación</th>
+                                <th style="width: 12%;">Saldo Pendiente</th>
+                                <th style="width: 20%;">Memorando</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -160,11 +161,17 @@ async function openLiquidacionModal(certificateId) {
                         <td><small>${item.actividad_codigo}</small></td>
                         <td><small>${item.item_codigo}</small></td>
                         <td><small>${item.descripcion_item}</small></td>
-                        <td class="text-end">$ ${parseFloat(item.monto).toFixed(2)}</td>
+                        <td class="text-end"><strong>$ ${parseFloat(item.monto).toFixed(2)}</strong></td>
                         <td>
                             <input type="number" class="form-control form-control-sm liquidacion-input" 
                                    value="${parseFloat(item.cantidad_liquidacion || 0).toFixed(2)}"
-                                   data-detalle-id="${item.id}" step="0.01" min="0">
+                                   data-detalle-id="${item.id}" step="0.01" min="0" 
+                                   onchange="updatePendiente(this)">
+                        </td>
+                        <td class="text-end">
+                            <strong class="saldo-pendiente text-warning" data-detalle-id="${item.id}">
+                                $ ${parseFloat(item.cantidad_pendiente || 0).toFixed(2)}
+                            </strong>
                         </td>
                         <td>
                             <input type="text" class="form-control form-control-sm memorando-input" 
@@ -294,5 +301,27 @@ document.getElementById('btnGuardarLiquidaciones').addEventListener('click', asy
         btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
     }
 });
+
+// Función para actualizar el saldo pendiente en tiempo real
+function updatePendiente(inputElement) {
+    const row = inputElement.closest('tr');
+    const montoCell = row.cells[6]; // Celda de Monto
+    const monto = parseFloat(montoCell.textContent.replace('$', '').replace(/\./g, '').replace(',', '.')) || 0;
+    const liquidacion = parseFloat(inputElement.value) || 0;
+    const pendiente = Math.max(0, monto - liquidacion);
+    
+    // Actualizar la celda de saldo pendiente
+    const pendienteCell = row.querySelector('.saldo-pendiente');
+    pendienteCell.textContent = '$ ' + pendiente.toFixed(2).replace('.', ',');
+    
+    // Cambiar color según el estado
+    if (pendiente === 0) {
+        pendienteCell.classList.remove('text-warning');
+        pendienteCell.classList.add('text-success');
+    } else {
+        pendienteCell.classList.remove('text-success');
+        pendienteCell.classList.add('text-warning');
+    }
+}
 </script>
 

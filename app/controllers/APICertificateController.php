@@ -240,7 +240,7 @@ class APICertificateController {
             require_once __DIR__ . '/../models/Certificate.php';
             $certificateModel = new Certificate();
             $guardadas = 0;
-            $certificadosActualizados = array();
+            $errores = [];
             
             foreach ($data as $item) {
                 $detalleId = $item['detalle_id'] ?? null;
@@ -250,91 +250,35 @@ class APICertificateController {
                 if (!$detalleId) continue;
                 
                 try {
-                    // Obtener el detalle completo
-                    $queryGetDetalle = "SELECT certificado_id, codigo_completo FROM detalle_certificados WHERE id = ?";
-                    $stmtGetDetalle = $this->db->prepare($queryGetDetalle);
-                    $stmtGetDetalle->execute([$detalleId]);
-                    $detalle = $stmtGetDetalle->fetch();
-                    $certificadoId = $detalle['certificado_id'] ?? null;
+                    // USAR EL MÉTODO DEL MODELO QUE HACE TODO CORRECTAMENTE
+                    $resultado = $certificateModel->updateLiquidacion($detalleId, $cantidadLiquidacion);
                     
-                    // Obtener total_pendiente anterior
-                    $queryGetCertAnterior = "SELECT total_pendiente FROM certificados WHERE id = ?";
-                    $stmtGetCertAnterior = $this->db->prepare($queryGetCertAnterior);
-                    $stmtGetCertAnterior->execute([$certificadoId]);
-                    $certAnterior = $stmtGetCertAnterior->fetch();
-                    $totalPendienteAnterior = floatval($certAnterior['total_pendiente'] ?? 0);
-                    
-                    // Actualizar liquidación y memorando directamente
-                    $query = "UPDATE detalle_certificados SET cantidad_liquidacion = ?, memorando = ? WHERE id = ?";
-                    $stmt = $this->db->prepare($query);
-                    error_log("API Guardando: detalle_id=$detalleId, cantidad=$cantidadLiquidacion, memorando=$memorando");
-                    
-                    if ($stmt->execute([$cantidadLiquidacion, $memorando, $detalleId])) {
-                        error_log("✓ API Guardado correctamente");
-                        $guardadas++;
+                    // Si updateLiquidacion fue exitoso, actualizar memorando
+                    if ($resultado['success']) {
+                        $query = "UPDATE detalle_certificados SET memorando = ?, fecha_actualizacion = NOW() WHERE id = ?";
+                        $stmt = $this->db->prepare($query);
+                        $stmt->execute([$memorando, $detalleId]);
                         
-                        // Agregar certificado a la lista de actualizaciones
-                        if ($certificadoId && !in_array($certificadoId, $certificadosActualizados)) {
-                            $certificadosActualizados[] = $certificadoId;
-                        }
-                    } else {
-                        error_log("✗ API Error al guardar");
+                        error_log("✅ [API] Liquidación guardada correctamente: detalle_id=$detalleId, cantidad_liq=$cantidadLiquidacion, cantidad_pend=" . $resultado['cantidad_pendiente'] . ", memorando=$memorando");
+                        $guardadas++;
                     }
+                    
                 } catch (Exception $e) {
-                    error_log("API Error: " . $e->getMessage());
-                    // Continuar con el siguiente item si hay error en uno
-                    continue;
+                    $errores[] = "Error en detalle $detalleId: " . $e->getMessage();
+                    error_log("❌ [API] Error en liquidación detalle $detalleId: " . $e->getMessage());
+                    error_log("❌ [API] TRACE: " . $e->getTraceAsString());
                 }
             }
             
-            // Actualizar total_liquidado y total_pendiente en la tabla certificados
-            // para cada certificado que fue modificado
-            foreach ($certificadosActualizados as $certId) {
-                $queryUpdate = "UPDATE certificados 
-                    SET 
-                        total_liquidado = COALESCE((
-                            SELECT SUM(cantidad_liquidacion) 
-                            FROM detalle_certificados 
-                            WHERE certificado_id = ?
-                        ), 0),
-                        total_pendiente = monto_total - COALESCE((
-                            SELECT SUM(cantidad_liquidacion) 
-                            FROM detalle_certificados 
-                            WHERE certificado_id = ?
-                        ), 0)
-                    WHERE id = ?";
-                
-                $stmtUpdate = $this->db->prepare($queryUpdate);
-                if ($stmtUpdate->execute([$certId, $certId, $certId])) {
-                    error_log("✓ API Total pendiente actualizado para certificado $certId");
-                    
-                    // Obtener el nuevo total_pendiente
-                    $queryGetCertNuevo = "SELECT total_pendiente FROM certificados WHERE id = ?";
-                    $stmtGetCertNuevo = $this->db->prepare($queryGetCertNuevo);
-                    $stmtGetCertNuevo->execute([$certId]);
-                    $certNuevo = $stmtGetCertNuevo->fetch();
-                    $totalPendienteNuevo = floatval($certNuevo['total_pendiente'] ?? 0);
-                    
-                    // Obtener codigo_completo del certificado
-                    $queryGetCodigo = "SELECT codigo_completo FROM detalle_certificados WHERE certificado_id = ? LIMIT 1";
-                    $stmtGetCodigo = $this->db->prepare($queryGetCodigo);
-                    $stmtGetCodigo->execute([$certId]);
-                    $resultCodigo = $stmtGetCodigo->fetch();
-                    $codigoCompleto = $resultCodigo['codigo_completo'] ?? null;
-                    
-                    // Restar la cantidad liquidada de col4 e incrementar saldo_disponible
-                    if ($codigoCompleto && $totalPendienteNuevo > 0) {
-                        $queryUpdatePresupuesto = "UPDATE presupuesto_items SET col4 = COALESCE(col4, 0) - ?, saldo_disponible = COALESCE(saldo_disponible, 0) + ? WHERE codigo_completo = ?";
-                        $stmtUpdatePresupuesto = $this->db->prepare($queryUpdatePresupuesto);
-                        $stmtUpdatePresupuesto->execute([$totalPendienteNuevo, $totalPendienteNuevo, $codigoCompleto]);
-                        error_log("✓ [API] Presupuesto actualizado: codigo=$codigoCompleto, col4-=$totalPendienteNuevo, saldo_disponible+=$totalPendienteNuevo");
-                    }
-                } else {
-                    error_log("✗ API Error al actualizar total pendiente para certificado $certId");
-                }
+            $mensaje = "Se guardaron $guardadas liquidaciones correctamente";
+            $exito = true;
+            
+            if (!empty($errores)) {
+                $mensaje .= ". Errores: " . implode("; ", $errores);
+                $exito = false;
             }
             
-            $this->jsonResponse(true, ['guardadas' => $guardadas], "Se guardaron $guardadas liquidaciones correctamente");
+            $this->jsonResponse($exito, ['guardadas' => $guardadas], $mensaje);
         } catch (Exception $e) {
             error_log("API saveLiquidacionesAction Error: " . $e->getMessage());
             $this->jsonResponse(false, null, 'Error: ' . $e->getMessage());

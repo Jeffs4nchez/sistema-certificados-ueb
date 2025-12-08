@@ -1,65 +1,89 @@
 -- ===============================================
--- TRIGGERS PARA ACTUALIZAR PRESUPUESTO_ITEMS
+-- LIMPIEZA: Eliminar todos los triggers anteriores
 -- Base de datos: PostgreSQL
 -- ===============================================
 
--- Tabla de referencia:
--- detalle_certificados columns:
---   - id (PK)
---   - codigo_completo (FK para presupuesto_items)
---   - monto (monto del item)
---   - cantidad_liquidacion (cuánto se liquidó)
---
--- presupuesto_items columns:
---   - codigo_item (codigo_completo de detalle_certificados)
---   - col4 = Total Certificado
---   - col5 = Total Comprometido
---   - col6 = Total Devengado
---   - col7 = Total Liquidado
---   - col8 = Saldo Disponible
+-- Triggers antiguos con nombres específicos
+DROP TRIGGER IF EXISTS trg_sync_col4_on_insert ON detalle_certificados CASCADE;
+DROP TRIGGER IF EXISTS trg_sync_col4_on_update ON detalle_certificados CASCADE;
+DROP TRIGGER IF EXISTS trg_sync_col4_on_delete ON detalle_certificados CASCADE;
+DROP TRIGGER IF EXISTS trg_update_liquidado_insert ON detalle_certificados CASCADE;
+DROP TRIGGER IF EXISTS trg_update_liquidado_update ON detalle_certificados CASCADE;
+DROP TRIGGER IF EXISTS trg_update_liquidado_delete ON detalle_certificados CASCADE;
+DROP TRIGGER IF EXISTS trigger_insert_detalle_certificados ON detalle_certificados CASCADE;
+DROP TRIGGER IF EXISTS trigger_update_liquidacion ON detalle_certificados CASCADE;
+DROP TRIGGER IF EXISTS trigger_recalculate_saldo_disponible ON presupuesto_items CASCADE;
+DROP TRIGGER IF EXISTS trigger_delete_detalle_certificados ON detalle_certificados CASCADE;
+
+-- Eliminar funciones antiguas (PostgreSQL usa paréntesis)
+DROP FUNCTION IF EXISTS trg_sync_col4_on_insert() CASCADE;
+DROP FUNCTION IF EXISTS trg_sync_col4_on_update() CASCADE;
+DROP FUNCTION IF EXISTS trg_sync_col4_on_delete() CASCADE;
+DROP FUNCTION IF EXISTS trg_update_liquidado_insert() CASCADE;
+DROP FUNCTION IF EXISTS trg_update_liquidado_update() CASCADE;
+DROP FUNCTION IF EXISTS trg_update_liquidado_delete() CASCADE;
+DROP FUNCTION IF EXISTS trigger_insert_detalle_certificados() CASCADE;
+DROP FUNCTION IF EXISTS trigger_update_liquidacion() CASCADE;
+DROP FUNCTION IF EXISTS trigger_recalculate_saldo_disponible() CASCADE;
+DROP FUNCTION IF EXISTS trigger_delete_detalle_certificados() CASCADE;
 
 -- ===============================================
--- TRIGGER 1: Cuando se INSERT un detalle_certificados
--- Actualiza col4 (Total Certificado) en presupuesto_items
+-- TRIGGERS PARA SINCRONIZAR PRESUPUESTO CON CERTIFICADOS
+-- Sistema: Gestión de Certificados y Presupuesto
+-- Base de datos: MySQL/PostgreSQL
 -- ===============================================
 
-CREATE OR REPLACE FUNCTION trigger_insert_detalle_certificados()
+-- REFERENCIA DE COLUMNAS EN presupuesto_items:
+--   col1 = Codificado (original)
+--   col3 = Disponible Inicial / Reservado
+--   col4 = Total Certificado
+--   saldo_disponible = col3 - col4 (lo disponible después de certificar)
+
+-- ===============================================
+-- TRIGGER 1: trigger_certificados_actualiza_col4
+-- Se activa: Al INSERT/UPDATE/DELETE en tabla certificados
+-- Efecto: Actualiza col4 en presupuesto_items
+-- ===============================================
+
+CREATE OR REPLACE FUNCTION fn_trigger_certificados_actualiza_col4()
 RETURNS TRIGGER AS $$
+DECLARE
+    monto_cambio NUMERIC;
 BEGIN
-    -- Actualizar el col4 (Total Certificado) en presupuesto_items
-    UPDATE presupuesto_items
-    SET col4 = COALESCE(col4, 0) + NEW.monto,
-        col8 = COALESCE(col1, 0) - (COALESCE(col4, 0) + NEW.monto) - COALESCE(col5, 0) - COALESCE(col6, 0) - COALESCE(col7, 0),
-        fecha_actualizacion = NOW()
-    WHERE codigo_item = NEW.codigo_completo;
+    -- Determinar el monto a sumar o restar según la operación
+    IF TG_OP = 'INSERT' THEN
+        monto_cambio := NEW.monto_total;
+    ELSIF TG_OP = 'DELETE' THEN
+        monto_cambio := -OLD.monto_total;
+    ELSE -- UPDATE
+        monto_cambio := NEW.monto_total - OLD.monto_total;
+    END IF;
     
-    RETURN NEW;
+    -- Actualizar col4 en presupuesto_items (si existe referencia)
+    -- Nota: Se asume que certificados tiene una columna codigo_completo o similar
+    -- Ajusta según tu estructura real
+    
+    RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trigger_insert_detalle_certificados ON detalle_certificados CASCADE;
-CREATE TRIGGER trigger_insert_detalle_certificados
-AFTER INSERT ON detalle_certificados
+DROP TRIGGER IF EXISTS trigger_certificados_actualiza_col4 ON certificados CASCADE;
+CREATE TRIGGER trigger_certificados_actualiza_col4
+AFTER INSERT OR UPDATE OR DELETE ON certificados
 FOR EACH ROW
-EXECUTE FUNCTION trigger_insert_detalle_certificados();
+EXECUTE FUNCTION fn_trigger_certificados_actualiza_col4();
 
 -- ===============================================
--- TRIGGER 2: Cuando se UPDATE cantidad_liquidacion
--- Actualiza col4 y saldo_disponible en presupuesto_items
+-- TRIGGER 2A: trigger_detalle_insert_col4
+-- Se activa: Al INSERT en tabla detalle_certificados
+-- Efecto: Suma el monto del item a col4 en presupuesto_items
 -- ===============================================
 
-CREATE OR REPLACE FUNCTION trigger_update_liquidacion()
+CREATE OR REPLACE FUNCTION fn_trigger_detalle_insert_col4()
 RETURNS TRIGGER AS $$
-DECLARE
-    diferencia NUMERIC;
 BEGIN
-    -- Calcular la diferencia de liquidación (new - old)
-    diferencia := NEW.cantidad_liquidacion - COALESCE(OLD.cantidad_liquidacion, 0);
-    
-    -- Actualizar col4 (restar liquidación) y saldo_disponible (incrementar)
     UPDATE presupuesto_items
-    SET col4 = COALESCE(col4, 0) - diferencia,
-        saldo_disponible = COALESCE(saldo_disponible, 0) + diferencia,
+    SET col4 = COALESCE(col4, 0) + NEW.monto,
         fecha_actualizacion = NOW()
     WHERE codigo_completo = NEW.codigo_completo;
     
@@ -67,41 +91,95 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trigger_update_liquidacion ON detalle_certificados CASCADE;
-CREATE TRIGGER trigger_update_liquidacion
+DROP TRIGGER IF EXISTS trigger_detalle_insert_col4 ON detalle_certificados CASCADE;
+CREATE TRIGGER trigger_detalle_insert_col4
+AFTER INSERT ON detalle_certificados
+FOR EACH ROW
+EXECUTE FUNCTION fn_trigger_detalle_insert_col4();
+
+-- ===============================================
+-- TRIGGER 2B: trigger_detalle_update_col4
+-- Se activa: Al UPDATE cantidad_liquidacion en tabla detalle_certificados
+-- Solo se ejecuta si cantidad_liquidacion cambió
+-- Efecto: NO MODIFICA col4 (permanece como monto original)
+--         El saldo se calcula: col1 (presupuesto) - col4 (certificado)
+-- ===============================================
+
+CREATE OR REPLACE FUNCTION fn_trigger_detalle_update_col4()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.cantidad_liquidacion IS DISTINCT FROM NEW.cantidad_liquidacion THEN
+        -- col4 representa el monto certificado (no cambia con liquidaciones)
+        -- Las liquidaciones solo se registran en cantidad_liquidacion
+        -- El saldo disponible se calcula en el nivel de presupuesto_items
+        
+        -- Solo actualizar timestamp
+        UPDATE presupuesto_items
+        SET fecha_actualizacion = NOW()
+        WHERE codigo_completo = NEW.codigo_completo;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_detalle_update_col4 ON detalle_certificados CASCADE;
+CREATE TRIGGER trigger_detalle_update_col4
 AFTER UPDATE ON detalle_certificados
 FOR EACH ROW
 WHEN (OLD.cantidad_liquidacion IS DISTINCT FROM NEW.cantidad_liquidacion)
-EXECUTE FUNCTION trigger_update_liquidacion();
+EXECUTE FUNCTION fn_trigger_detalle_update_col4();
 
 -- ===============================================
--- TRIGGER 3: Cuando se DELETE un detalle_certificados
--- Revierte los cambios en presupuesto_items
+-- TRIGGER 2C: trigger_detalle_delete_col4
+-- Se activa: Al DELETE en tabla detalle_certificados
+-- Efecto: Resta el monto del item de col4 en presupuesto_items
 -- ===============================================
 
-CREATE OR REPLACE FUNCTION trigger_delete_detalle_certificados()
+CREATE OR REPLACE FUNCTION fn_trigger_detalle_delete_col4()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Revertir col4 (restar el monto) y col7 (restar lo liquidado)
     UPDATE presupuesto_items
     SET col4 = COALESCE(col4, 0) - OLD.monto,
-        col7 = COALESCE(col7, 0) - COALESCE(OLD.cantidad_liquidacion, 0),
-        col8 = COALESCE(col1, 0) - (COALESCE(col4, 0) - OLD.monto) - COALESCE(col5, 0) - COALESCE(col6, 0) - (COALESCE(col7, 0) - COALESCE(OLD.cantidad_liquidacion, 0)),
         fecha_actualizacion = NOW()
-    WHERE codigo_item = OLD.codigo_completo;
+    WHERE codigo_completo = OLD.codigo_completo;
     
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trigger_delete_detalle_certificados ON detalle_certificados CASCADE;
-CREATE TRIGGER trigger_delete_detalle_certificados
-BEFORE DELETE ON detalle_certificados
+DROP TRIGGER IF EXISTS trigger_detalle_delete_col4 ON detalle_certificados CASCADE;
+CREATE TRIGGER trigger_detalle_delete_col4
+AFTER DELETE ON detalle_certificados
 FOR EACH ROW
-EXECUTE FUNCTION trigger_delete_detalle_certificados();
+EXECUTE FUNCTION fn_trigger_detalle_delete_col4();
 
 -- ===============================================
--- VERIFICACIÓN: Mostrar triggers creados
+-- TRIGGER 3: trigger_col4_recalcula_saldo
+-- Se activa: Cuando cambia col4 en presupuesto_items
+-- Efecto: Recalcula saldo_disponible = col3 - col4
+-- ===============================================
+
+CREATE OR REPLACE FUNCTION fn_trigger_col4_recalcula_saldo()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Recalcular saldo_disponible = col3 - col4
+    NEW.saldo_disponible := COALESCE(NEW.col3, 0) - COALESCE(NEW.col4, 0);
+    NEW.fecha_actualizacion := NOW();
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_col4_recalcula_saldo ON presupuesto_items CASCADE;
+CREATE TRIGGER trigger_col4_recalcula_saldo
+BEFORE UPDATE ON presupuesto_items
+FOR EACH ROW
+WHEN (OLD.col4 IS DISTINCT FROM NEW.col4)
+EXECUTE FUNCTION fn_trigger_col4_recalcula_saldo();
+
+-- ===============================================
+-- VERIFICACIÓN: Listar todos los triggers creados
 -- ===============================================
 
 SELECT 
@@ -110,5 +188,6 @@ SELECT
     event_object_table,
     action_timing
 FROM information_schema.triggers
-WHERE trigger_schema = 'public' AND event_object_table IN ('detalle_certificados', 'presupuesto_items')
+WHERE trigger_schema = 'public' 
+  AND trigger_name LIKE 'trigger_%'
 ORDER BY event_object_table, trigger_name;

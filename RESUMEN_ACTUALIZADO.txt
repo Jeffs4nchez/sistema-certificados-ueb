@@ -1,0 +1,80 @@
+================================================================================
+✅ SISTEMA ACTUALIZADO - CÓDIGO PURO PHP SIN TRIGGERS
+================================================================================
+
+CAMBIOS PRINCIPALES:
+────────────────────────────────────────────────────────────────────────────────
+
+1️⃣ TRIGGERS DE LIQUIDACIÓN ELIMINADOS
+   ❌ trigger_update_liquidacion
+   ❌ trigger_update_liquidado_insert
+   ❌ trigger_update_liquidado_update
+   ❌ trigger_update_liquidado_delete
+   ❌ Y 8 más conflictivos
+
+2️⃣ LIQUIDACIÓN AHORA CON PHP PURO
+   ✅ updateLiquidacion() en Certificate.php
+   ✅ Valida cantidad
+   ✅ Actualiza cantidad_liquidacion
+   ✅ Actualiza cantidad_pendiente (monto - liquidacion)
+   ✅ Recalcula totales en certificados
+   ✅ Sin modificar presupuesto
+
+3️⃣ CAMPOS QUE SE ACTUALIZAN
+   ✅ detalle_certificados.cantidad_liquidacion
+   ✅ detalle_certificados.cantidad_pendiente
+   ✅ certificados.total_liquidado
+   ✅ certificados.total_pendiente
+
+4️⃣ CAMPOS QUE NO SE TOCAN
+   ❌ col7 en presupuesto (no se toca)
+   ❌ col8 en presupuesto (no se toca)
+
+================================================================================
+FLUJO AHORA
+================================================================================
+
+INSERTAR ITEM (triggers automáticos):
+   INSERT detalle_certificados
+   → Trigger INSERT suma a col4 automáticamente ✅
+
+ACTUALIZAR ITEM (triggers automáticos):
+   UPDATE detalle_certificados.monto
+   → Trigger UPDATE recalcula col4 automáticamente ✅
+
+ELIMINAR ITEM (triggers automáticos):
+   DELETE detalle_certificados
+   → Trigger DELETE resta de col4 automáticamente ✅
+
+LIQUIDAR ITEM (código PHP):
+   updateLiquidacion($id, $cantidad)
+   → Actualiza cantidad_liquidacion
+   → Actualiza cantidad_pendiente
+   → Recalcula totales certificado
+   → SIN modificar presupuesto ✅
+
+================================================================================
+ARCHIVOS MODIFICADOS
+================================================================================
+
+✅ app/models/Certificate.php
+   - updateLiquidacion() reescrito (PHP puro)
+   - Ahora SÍ actualiza cantidad_pendiente
+   - No toca presupuesto_items
+
+✅ Base de datos
+   - Triggers de liquidación eliminados
+   - Triggers de INSERT/UPDATE/DELETE funcionan
+
+================================================================================
+PRÓXIMOS PASOS
+================================================================================
+
+1. ✅ Sistema actualizado
+2. ✅ Liquidación con PHP puro
+3. ✅ Cantidad pendiente se calcula automáticamente
+4. ✅ Presupuesto intacto
+5. Prueba todo desde la interfaz
+6. ¡Listo para producción!
+
+===============================================================================
