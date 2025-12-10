@@ -110,6 +110,36 @@ class PresupuestoItem {
     }
 
     /**
+     * Actualizar SOLO col2 y col3 (para importación CSV)
+     * IMPORTANTE: No actualiza col4 (solo se modifica por liquidaciones)
+     * Recalcula saldo_disponible = col3 - col4 (mantiene col4 anterior)
+     */
+    public function actualizarCol3($id, $col2_nuevo, $col3_nuevo) {
+        // Obtener col4 actual para mantenerlo
+        $stmt = $this->db->prepare("SELECT col4 FROM presupuesto_items WHERE id = ?");
+        $stmt->execute([$id]);
+        $item = $stmt->fetch();
+        
+        if (!$item) {
+            return false;
+        }
+        
+        $col4_actual = (float)$item['col4'];
+        $saldo_nuevo = $col3_nuevo - $col4_actual;
+        
+        // Actualizar SOLO col2, col3 y saldo_disponible
+        $stmt = $this->db->prepare("
+            UPDATE presupuesto_items SET
+                col2 = ?,
+                col3 = ?,
+                saldo_disponible = ?
+            WHERE id = ?
+        ");
+        
+        return $stmt->execute([$col2_nuevo, $col3_nuevo, $saldo_nuevo, $id]);
+    }
+
+    /**
      * Eliminar item
      */
     public function delete($id) {
@@ -166,25 +196,13 @@ class PresupuestoItem {
     }
 
     /**
-     * Generar hash MD5 de los datos de un item (para detectar cambios)
-     * Usa los campos más importantes para determinar si cambió
+     * Generar hash MD5 SOLO de COL3 (campo crítico)
+     * LÓGICA: Solo actualiza si col3 cambió
+     * Los demás campos se ignoran
      */
     public function generarHashItem($data) {
-        $campos = [
-            $data['descripciong1'],
-            $data['descripciong2'],
-            $data['descripciong3'],
-            $data['descripciong4'],
-            $data['descripciong5'],
-            $data['col1'],
-            $data['col3'],
-            $data['codigog1'],
-            $data['codigog2'],
-            $data['codigog3'],
-            $data['codigog4'],
-            $data['codigog5']
-        ];
-        return md5(json_encode($campos));
+        // SOLO COMPARAR COL3 (Codificado)
+        return md5($data['col3']);
     }
 
     /**
@@ -361,34 +379,22 @@ class PresupuestoItem {
                     'saldo_disponible' => $col3 - $col4
                 ];
                 
-                // LÓGICA DE DETECCIÓN DE DUPLICADOS
+                // LÓGICA DE DETECCIÓN DE DUPLICADOS - SOLO COL2 Y COL3
                 $itemExistente = $this->obtenerPorCodigoCompleto($codigo_completo);
                 
                 if ($itemExistente) {
-                    // El código ya existe, verificar si el contenido cambió
-                    $hashNuevo = $this->generarHashItem($data);
-                    $datosExistentes = [
-                        'descripciong1' => $itemExistente['descripciong1'],
-                        'descripciong2' => $itemExistente['descripciong2'],
-                        'descripciong3' => $itemExistente['descripciong3'],
-                        'descripciong4' => $itemExistente['descripciong4'],
-                        'descripciong5' => $itemExistente['descripciong5'],
-                        'col1'  => $itemExistente['col1'],
-                        'col3'  => $itemExistente['col3'],
-                        'codigog1' => $itemExistente['codigog1'],
-                        'codigog2' => $itemExistente['codigog2'],
-                        'codigog3' => $itemExistente['codigog3'],
-                        'codigog4' => $itemExistente['codigog4'],
-                        'codigog5' => $itemExistente['codigog5']
-                    ];
-                    $hashExistente = $this->generarHashItem($datosExistentes);
+                    // El código ya existe, verificar SI COL2 O COL3 CAMBIARON
+                    $col2Actual = (float)$itemExistente['col2'];
+                    $col3Actual = (float)$itemExistente['col3'];
+                    $col2Nuevo = (float)$data['col2'];
+                    $col3Nuevo = (float)$data['col3'];
                     
-                    if ($hashNuevo !== $hashExistente) {
-                        // Los datos cambiarón, actualizar
-                        $this->update($itemExistente['id'], $data);
+                    if ($col2Nuevo !== $col2Actual || $col3Nuevo !== $col3Actual) {
+                        // COL2 O COL3 CAMBIARON → ACTUALIZAR y RECALCULAR saldo
+                        $this->actualizarCol3($itemExistente['id'], $col2Nuevo, $col3Nuevo);
                         $updated++;
                     } else {
-                        // Los datos son idénticos, ignorar (no duplicar)
+                        // COL2 Y COL3 IGUALES → IGNORAR (sin cambios)
                         $duplicated++;
                     }
                 } else {
