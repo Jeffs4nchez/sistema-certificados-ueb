@@ -153,6 +153,41 @@ class PresupuestoItem {
     }
 
     /**
+     * Obtener item por código completo
+     */
+    public function obtenerPorCodigoCompleto($codigo_completo) {
+        $stmt = $this->db->prepare("
+            SELECT * FROM presupuesto_items 
+            WHERE codigo_completo = ? 
+            LIMIT 1
+        ");
+        $stmt->execute([$codigo_completo]);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Generar hash MD5 de los datos de un item (para detectar cambios)
+     * Usa los campos más importantes para determinar si cambió
+     */
+    public function generarHashItem($data) {
+        $campos = [
+            $data['descripciong1'],
+            $data['descripciong2'],
+            $data['descripciong3'],
+            $data['descripciong4'],
+            $data['descripciong5'],
+            $data['col1'],
+            $data['col3'],
+            $data['codigog1'],
+            $data['codigog2'],
+            $data['codigog3'],
+            $data['codigog4'],
+            $data['codigog5']
+        ];
+        return md5(json_encode($campos));
+    }
+
+    /**
      * Obtener resumen de montos
      */
     public function getResumen() {
@@ -215,6 +250,10 @@ class PresupuestoItem {
 
     /**
      * Importar presupuesto desde CSV
+     * MEJORA: Maneja inteligentemente los duplicados
+     * - Si el código existe pero los datos cambiaron: ACTUALIZA
+     * - Si el código existe y los datos son iguales: IGNORA (no duplica)
+     * - Si es nuevo: INSERTA
      * Soporta separadores: coma (,) y punto y coma (;)
      * Extrae solo las siglas (códigos) de cada columna y crea codigo_completo
      * Formato esperado: PROGRAMA,ACTIVIDAD,FUENTE,GEOGRAFICO,ITEM,COL1,COL2,COL3,COL4,COL5,COL6,COL7,COL8,COL9,COL10,COL20,CODIGOG1,CODIGOG2,CODIGOG3,CODIGOG4,CODIGOG5
@@ -253,6 +292,8 @@ class PresupuestoItem {
         }
         
         $imported = 0;
+        $updated = 0;
+        $duplicated = 0;
         $errors = 0;
         $errorDetails = [];
         $lineNumber = 1;
@@ -320,8 +361,41 @@ class PresupuestoItem {
                     'saldo_disponible' => $col3 - $col4
                 ];
                 
-                $this->create($data);
-                $imported++;
+                // LÓGICA DE DETECCIÓN DE DUPLICADOS
+                $itemExistente = $this->obtenerPorCodigoCompleto($codigo_completo);
+                
+                if ($itemExistente) {
+                    // El código ya existe, verificar si el contenido cambió
+                    $hashNuevo = $this->generarHashItem($data);
+                    $datosExistentes = [
+                        'descripciong1' => $itemExistente['descripciong1'],
+                        'descripciong2' => $itemExistente['descripciong2'],
+                        'descripciong3' => $itemExistente['descripciong3'],
+                        'descripciong4' => $itemExistente['descripciong4'],
+                        'descripciong5' => $itemExistente['descripciong5'],
+                        'col1'  => $itemExistente['col1'],
+                        'col3'  => $itemExistente['col3'],
+                        'codigog1' => $itemExistente['codigog1'],
+                        'codigog2' => $itemExistente['codigog2'],
+                        'codigog3' => $itemExistente['codigog3'],
+                        'codigog4' => $itemExistente['codigog4'],
+                        'codigog5' => $itemExistente['codigog5']
+                    ];
+                    $hashExistente = $this->generarHashItem($datosExistentes);
+                    
+                    if ($hashNuevo !== $hashExistente) {
+                        // Los datos cambiarón, actualizar
+                        $this->update($itemExistente['id'], $data);
+                        $updated++;
+                    } else {
+                        // Los datos son idénticos, ignorar (no duplicar)
+                        $duplicated++;
+                    }
+                } else {
+                    // Es nuevo, insertar
+                    $this->create($data);
+                    $imported++;
+                }
                 
             } catch (Exception $e) {
                 $errors++;
@@ -334,6 +408,8 @@ class PresupuestoItem {
         
         return [
             'total' => $imported,
+            'updated' => $updated,
+            'duplicated' => $duplicated,
             'errors' => $errors,
             'errorDetails' => $errorDetails
         ];

@@ -367,6 +367,49 @@ foreach ($parametros as $param) {
     }
 }
 
+// Crear administrador por defecto si no existe
+echo "\n[INFO] Creando administrador por defecto...\n";
+$adminCount = $mysqli->query("SELECT COUNT(*) as total FROM usuarios WHERE tipo_usuario = 'admin' AND estado = 'activo'")->fetch_assoc();
+
+if ($adminCount['total'] == 0) {
+    $nombre = "Administrador";
+    $apellidos = "Sistema";
+    $correo = "admin@sistema.local";
+    $cargo = "Administrador del Sistema";
+    $tipo_usuario = "admin";
+    $contraseña = "Admin123!";
+    $contraseña_hash = password_hash($contraseña, PASSWORD_BCRYPT);
+    $estado = "activo";
+    
+    $stmt = $mysqli->prepare("
+        INSERT INTO usuarios 
+        (nombre, apellidos, correo_institucional, cargo, tipo_usuario, contraseña, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ");
+    
+    $stmt->bind_param(
+        "sssssss",
+        $nombre,
+        $apellidos,
+        $correo,
+        $cargo,
+        $tipo_usuario,
+        $contraseña_hash,
+        $estado
+    );
+    
+    if ($stmt->execute()) {
+        echo "[✓] Administrador por defecto creado\n";
+        echo "    Correo: {$correo}\n";
+        echo "    Contraseña: {$contraseña}\n";
+        echo "[⚠️] PROTECCIÓN: No puede ser eliminado si es el único administrador activo\n";
+    } else {
+        echo "[ERROR] Error al crear administrador: " . $stmt->error . "\n";
+    }
+} else {
+    echo "[OK] Ya existe un administrador en el sistema\n";
+}
+
 echo "\n[✓] ¡Base de datos instalada correctamente!\n";
 echo "[✓] URL: http://localhost/programas/php-certificates/\n";
 

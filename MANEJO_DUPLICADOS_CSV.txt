@@ -1,0 +1,217 @@
+═══════════════════════════════════════════════════════════════════════════════
+MANEJO INTELIGENTE DE DUPLICADOS EN IMPORTACIÓN CSV
+═══════════════════════════════════════════════════════════════════════════════
+
+PROBLEMA RESUELTO:
+─────────────────
+Cuando se sube un CSV con el mismo contenido que uno anterior, el sistema 
+ahora detecta si:
+  1. El registro ya existe (por código completo)
+  2. Si el contenido cambió (se actualiza)
+  3. Si el contenido es idéntico (se ignora, sin duplicar)
+
+
+FLUJO DE IMPORTACIÓN:
+───────────────────
+
+    Subir archivo CSV
+          ↓
+    Procesar línea por línea
+          ↓
+    ¿Código existe? → NO → INSERTAR nuevo registro ✓
+          ↓ SÍ
+    ¿Datos cambiaron? → SÍ → ACTUALIZAR registro ✓
+          ↓ NO
+    IGNORAR (no duplicar) ✓
+
+
+EJEMPLO PRÁCTICO:
+────────────────
+
+PRIMER UPLOAD (15-Nov-2025):
+┌────────────────────────────────────────────┐
+│ CSV CONTENIDO:                             │
+│ PROGRAMA: Educación                        │
+│ CODIGOG1: 01                               │
+│ COL3: 100,000                             │
+│ COL4: 50,000                              │
+└────────────────────────────────────────────┘
+        ↓
+    Se crea registro ID #1
+    Estado: NUEVO ✓
+
+SEGUNDO UPLOAD (20-Nov-2025) - CSV IDÉNTICO:
+┌────────────────────────────────────────────┐
+│ CSV CONTENIDO:                             │
+│ PROGRAMA: Educación                        │
+│ CODIGOG1: 01                               │
+│ COL3: 100,000                             │
+│ COL4: 50,000                              │
+└────────────────────────────────────────────┘
+        ↓
+    Sistema detecta: ID #1 ya existe
+    Genera HASH: abc123...
+    Compara con ID #1: abc123... (IGUAL)
+    Acción: IGNORAR (no duplicar)
+    Resultado: +1 DUPLICADO IGNORADO ✓
+
+TERCER UPLOAD (22-Nov-2025) - CSV CON CAMBIOS:
+┌────────────────────────────────────────────┐
+│ CSV CONTENIDO:                             │
+│ PROGRAMA: Educación                        │
+│ CODIGOG1: 01                               │
+│ COL3: 120,000  ← CAMBIÓ                    │
+│ COL4: 60,000   ← CAMBIÓ                    │
+└────────────────────────────────────────────┘
+        ↓
+    Sistema detecta: ID #1 ya existe
+    Genera HASH: def456...
+    Compara con ID #1: abc123... (DIFERENTE)
+    Acción: ACTUALIZAR
+    Resultado: +1 ACTUALIZADO ✓
+
+
+RESULTADOS REPORTADOS:
+─────────────────────
+
+Después del tercer upload, el sistema muestra:
+
+    ✓ Importación completada:
+      • 0 nuevo(s) registro(s) importado(s)
+      • 1 registro(s) actualizado(s) (contenido cambió)
+      • 2 registro(s) ignorado(s) (duplicados idénticos)
+      • 0 errores
+
+
+IMPLEMENTACIÓN TÉCNICA:
+──────────────────────
+
+MODELO: PresupuestoItem.php
+
+1. obtenerPorCodigoCompleto($codigo_completo)
+   → Busca si el registro ya existe por código completo
+   
+2. generarHashItem($data)
+   → Genera hash MD5 de campos clave:
+     - Descripciones (program, actividad, fuente, etc.)
+     - Montos (col1, col3)
+     - Códigos de clasificación
+   
+3. importCSV($filePath) - MEJORADO
+   → Para cada línea del CSV:
+     a) Busca por código completo
+     b) Si existe: Compara hashes
+        - Hashes iguales: duplicated++
+        - Hashes diferentes: updated++
+     c) Si no existe: imported++
+   
+   → Retorna array con:
+     {
+       'total': 5,           // Nuevos insertados
+       'updated': 2,         // Actualizados
+       'duplicated': 1,      // Ignorados (duplicados)
+       'errors': 0,          // Con error
+       'errorDetails': []
+     }
+
+CONTROLADOR: PresupuestoController.php
+
+uploadAction() - MEJORADO
+  → Procesa resultado y muestra mensaje completo
+  → Diferencia entre:
+    - Nuevos registros (INSERTED)
+    - Registros actualizados (UPDATED)
+    - Duplicados ignorados (DUPLICATED)
+
+
+CAMPOS UTILIZADOS PARA HASH:
+────────────────────────────
+
+Los siguientes campos se usan para determinar si el contenido cambió:
+  • descripciong1  (Programa)
+  • descripciong2  (Actividad)
+  • descripciong3  (Fuente)
+  • descripciong4  (Geográfico)
+  • descripciong5  (Item)
+  • col1           (Monto 1)
+  • col3           (Codificado)
+  • codigog1-5     (Códigos de clasificación)
+
+⚠️ NOTA: col4 (Certificado) NO afecta el hash porque puede cambiar por
+          liquidaciones, no porque cambió el CSV.
+
+
+VENTAJAS:
+─────────
+
+✓ No genera duplicados idénticos
+✓ Permite actualizar registros con nuevos datos
+✓ Mantiene la integridad de datos
+✓ Reporta claramente qué pasó con cada importación
+✓ Permite re-procesar CSV sin riesgo
+✓ Compatible con flujos de actualización de presupuestos
+
+
+CASOS DE USO:
+─────────────
+
+1. IMPORTACIÓN INICIAL:
+   Se sube presupuesto base.csv
+   → 150 registros nuevos importados
+
+2. CORRECCIÓN DE DATOS:
+   Se sube presupuesto base.csv (sin cambios)
+   → 150 duplicados ignorados (no pasa nada)
+
+3. ACTUALIZACIÓN DE MONTOS:
+   Se sube presupuesto actualizado.csv (con col3 diferentes)
+   → 150 registros actualizados
+
+4. IMPORTACIÓN PARCIAL:
+   Se sube presupuesto base.csv con 150 registros
+   Se sube presupuesto_nuevos.csv con 20 nuevos + 150 anteriores
+   → 150 duplicados ignorados + 20 nuevos importados
+
+
+TESTING:
+────────
+
+Test 1: CSV duplicado exacto
+  1. Sube presupuesto.csv (5 líneas)
+  2. Resultado: 5 importados ✓
+  3. Sube el MISMO presupuesto.csv
+  4. Resultado: 0 nuevos, 0 actualizados, 5 duplicados ✓
+
+Test 2: CSV con actualizaciones
+  1. Sube presupuesto.csv (col3: 100)
+  2. Resultado: 5 importados ✓
+  3. Sube presupuesto_v2.csv (mismo archivo pero col3: 120)
+  4. Resultado: 0 nuevos, 5 actualizados, 0 duplicados ✓
+
+Test 3: CSV mixto
+  1. Sube presupuesto.csv (5 registros)
+  2. Resultado: 5 importados ✓
+  3. Sube presupuesto_mixto.csv (3 anteriores sin cambios + 2 nuevos)
+  4. Resultado: 2 nuevos, 0 actualizados, 3 duplicados ✓
+
+
+CONFIGURACIÓN:
+──────────────
+
+Cambios en archivos:
+  • app/models/PresupuestoItem.php
+    - Nueva lógica en importCSV()
+    - Nuevo método obtenerPorCodigoCompleto()
+    - Nuevo método generarHashItem()
+  
+  • app/controllers/PresupuestoController.php
+    - Mejorado uploadAction()
+    - Mejor reporte de resultados
+
+
+VERSIÓN:
+────────
+v1.2 - Diciembre 2025
+Agregado manejo inteligente de duplicados en importación CSV
+
+═══════════════════════════════════════════════════════════════════════════════

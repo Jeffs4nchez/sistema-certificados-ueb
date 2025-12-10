@@ -187,9 +187,41 @@ class Usuario {
     }
 
     /**
+     * Contar administradores activos
+     */
+    public function contarAdministradoresActivos() {
+        $query = "SELECT COUNT(*) as total FROM {$this->table} 
+                  WHERE tipo_usuario = 'admin' AND estado = 'activo'";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        $result = $stmt->fetch();
+        return $result['total'] ?? 0;
+    }
+
+    /**
+     * Verificar si el usuario es administrador
+     */
+    public function esAdministrador($id) {
+        $usuario = $this->obtenerPorId($id);
+        return $usuario && $usuario['tipo_usuario'] === 'admin';
+    }
+
+    /**
      * Eliminar usuario (cambiar estado)
+     * PROTECCIÓN: No permite eliminar el último administrador del sistema
      */
     public function eliminar($id) {
+        // Verificar si es administrador
+        if ($this->esAdministrador($id)) {
+            // Contar administradores activos
+            $totalAdmins = $this->contarAdministradoresActivos();
+            
+            // Si es el único administrador, no permitir eliminar
+            if ($totalAdmins <= 1) {
+                throw new Exception('No se puede desactivar el último administrador del sistema. Debe crear otro administrador antes.');
+            }
+        }
+
         $query = "UPDATE {$this->table} 
                   SET estado = 'inactivo',
                       fecha_actualizacion = CURRENT_TIMESTAMP

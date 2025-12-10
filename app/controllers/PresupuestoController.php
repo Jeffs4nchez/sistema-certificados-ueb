@@ -68,17 +68,31 @@ class PresupuestoController {
                     
                     $resultado = $this->presupuestoModel->importCSV($file);
                     
-                    if ($resultado['total'] > 0) {
-                        $mensaje = "✓ Se importaron {$resultado['total']} registros correctamente.";
+                    // LÓGICA MEJORADA: Mostrar resultado con detalles de duplicados
+                    if ($resultado['total'] > 0 || $resultado['updated'] > 0) {
+                        $mensaje = "✓ Importación completada:\n";
+                        
+                        if ($resultado['total'] > 0) {
+                            $mensaje .= "  • {$resultado['total']} nuevo(s) registro(s) importado(s)\n";
+                        }
+                        
+                        if ($resultado['updated'] > 0) {
+                            $mensaje .= "  • {$resultado['updated']} registro(s) actualizado(s) (contenido cambió)\n";
+                        }
+                        
+                        if ($resultado['duplicated'] > 0) {
+                            $mensaje .= "  • {$resultado['duplicated']} registro(s) ignorado(s) (duplicados idénticos)\n";
+                        }
+                        
                         if ($resultado['errors'] > 0) {
-                            $mensaje .= " ({$resultado['errors']} errores ignorados)";
+                            $mensaje .= "\n❌ Errores ({$resultado['errors']}):\n";
                             if (!empty($resultado['errorDetails'])) {
-                                $mensaje .= "\n\nDetalles de errores:\n";
                                 foreach ($resultado['errorDetails'] as $detalle) {
-                                    $mensaje .= "• " . $detalle . "\n";
+                                    $mensaje .= "  • " . $detalle . "\n";
                                 }
                             }
                         }
+                        
                         $_SESSION['success'] = $mensaje;
                     } else {
                         $_SESSION['error'] = 'No se importó ningún registro. Verifique el formato del CSV.';

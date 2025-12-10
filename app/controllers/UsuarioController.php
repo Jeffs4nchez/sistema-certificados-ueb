@@ -196,6 +196,7 @@ class UsuarioController {
 
     /**
      * Eliminar usuario
+     * PROTECCIÓN: No permite eliminar el último administrador
      */
     public function eliminar() {
         // Solo admin puede eliminar usuarios
@@ -211,6 +212,15 @@ class UsuarioController {
         }
 
         try {
+            // Obtener el usuario a eliminar
+            $usuario_a_eliminar = $this->usuario->obtenerPorId($id);
+            if (!$usuario_a_eliminar) {
+                $_SESSION['error'] = 'Usuario no encontrado';
+                header('Location: ?action=usuario&method=listar');
+                return;
+            }
+
+            // Intentar eliminar
             if ($this->usuario->eliminar($id)) {
                 $_SESSION['success'] = 'Usuario desactivado exitosamente';
             } else {
@@ -219,7 +229,7 @@ class UsuarioController {
             if (ob_get_level() > 0) ob_end_clean();
             header('Location: ?action=usuario&method=listar');
         } catch (Exception $e) {
-            $_SESSION['error'] = "Error: " . $e->getMessage();
+            $_SESSION['error'] = $e->getMessage();
             if (ob_get_level() > 0) ob_end_clean();
             header('Location: ?action=usuario&method=listar');
         }

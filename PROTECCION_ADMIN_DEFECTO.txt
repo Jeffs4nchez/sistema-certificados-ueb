@@ -1,0 +1,182 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROTECCIÓN DE ADMINISTRADOR POR DEFECTO
+═══════════════════════════════════════════════════════════════════════════════
+
+PROBLEMA RESUELTO:
+─────────────────
+Cuando un sistema no tiene administradores o quedó vacío, no es posible volver
+a crear usuarios o gestionar el sistema. Esta protección asegura que siempre
+exista al menos un administrador funcional.
+
+
+CARACTERÍSTICAS:
+────────────────
+
+1. CREACIÓN AUTOMÁTICA DE ADMIN AL INSTALAR
+   ✓ Al ejecutar database/install.php, se crea automáticamente un administrador
+   ✓ Solo se crea si no existe ningún admin activo en la BD
+   ✓ Credenciales por defecto:
+     • Correo: admin@sistema.local
+     • Contraseña: Admin123!
+
+2. PROTECCIÓN CONTRA ELIMINACIÓN ACCIDENTAL
+   ✓ No se puede desactivar el último administrador activo
+   ✓ Si intentas eliminar el único admin, recibirás error:
+     "No se puede desactivar el último administrador del sistema. 
+      Debe crear otro administrador antes."
+   
+3. RECUPERACIÓN DEL SISTEMA
+   ✓ Si se elimina accidentalmente todos los admins, ejecuta:
+     php database/create_default_admin.php
+   
+   O vuelve a ejecutar:
+     php database/install.php
+
+
+IMPLEMENTACIÓN TÉCNICA:
+──────────────────────
+
+MODELO (app/models/Usuario.php):
+  • contarAdministradoresActivos()
+    → Cuenta administradores activos en la BD
+  
+  • esAdministrador($id)
+    → Verifica si un usuario es admin
+  
+  • eliminar($id) - PROTEGIDO
+    → Lanza excepción si es el último admin
+    → Permite eliminar si hay otros admins
+
+CONTROLADOR (app/controllers/UsuarioController.php):
+  • eliminar() - MEJORADO
+    → Captura la excepción del modelo
+    → Muestra mensaje de error apropiado al usuario
+
+
+SCRIPTS DE INSTALACIÓN:
+──────────────────────
+
+1. database/install.php
+   - Script principal de instalación
+   - Crea tablas
+   - Inserta parámetros
+   - ✨ NUEVO: Crea admin por defecto
+
+2. database/create_default_admin.php
+   - Script independiente para crear admin
+   - Útil si necesitas resetear el admin
+
+
+FLUJO DE ELIMINACIÓN DE USUARIO:
+────────────────────────────────
+
+    Usuario Admin intenta eliminar un usuario
+                ↓
+    UsuarioController::eliminar()
+                ↓
+    Usuario::eliminar($id)
+                ↓
+    ¿Es administrador? → NO → Eliminar normal ✓
+            ↓ SÍ
+    ¿Hay otros admins? → SÍ → Eliminar ✓
+            ↓ NO
+    Lanzar excepción ✗
+                ↓
+    Controlador captura excepción
+                ↓
+    Mostrar error al usuario:
+    "No se puede desactivar el último administrador..."
+
+
+USO DESDE EL NAVEGADOR:
+──────────────────────
+
+1. Primera instalación:
+   - Accede a http://localhost/programas/certificados-sistema/
+   - Se ejecuta install.php automáticamente
+   - Se crea admin por defecto
+   - Inicia sesión con: admin@sistema.local / Admin123!
+
+2. Cambiar contraseña del admin:
+   - Accede a Perfil → Cambiar Contraseña
+   - ✨ RECOMENDADO: Cambia la contraseña por defecto
+
+
+RECUPERACIÓN DE EMERGENCIA:
+──────────────────────────
+
+Si el sistema quedó sin administrador:
+
+1. Opción 1: Via terminal/CMD
+   cd c:\xampp\htdocs\programas\certificados-sistema
+   php database/install.php
+
+2. Opción 2: Via navegador (solo si la tabla usuarios está vacía)
+   http://localhost/programas/certificados-sistema/
+   (se ejecuta install.php automáticamente)
+
+3. Opción 3: Script independiente
+   php database/create_default_admin.php
+
+
+TESTING:
+────────
+
+Para probar la protección:
+
+1. Crear un segundo administrador:
+   - Ir a Administración → Gestionar Usuarios
+   - Crear nuevo usuario tipo "admin"
+
+2. Intentar eliminar el primer admin:
+   - Debería permitir ✓
+
+3. Eliminar el segundo admin:
+   - Debería permitir ✓
+
+4. Intentar eliminar el último admin (primero):
+   - Debería RECHAZAR ✗
+   - Mostrar mensaje de error apropiado
+
+5. Resultado esperado:
+   "No se puede desactivar el último administrador del sistema.
+    Debe crear otro administrador antes."
+
+
+CÓDIGO DE REFERENCIA:
+────────────────────
+
+Verificación en modelo:
+  if ($this->esAdministrador($id)) {
+      $totalAdmins = $this->contarAdministradoresActivos();
+      if ($totalAdmins <= 1) {
+          throw new Exception('No se puede desactivar el último administrador...');
+      }
+  }
+
+Manejo en controlador:
+  try {
+      if ($this->usuario->eliminar($id)) {
+          $_SESSION['success'] = 'Usuario desactivado exitosamente';
+      }
+  } catch (Exception $e) {
+      $_SESSION['error'] = $e->getMessage();  ← Muestra error legible
+  }
+
+
+SEGURIDAD:
+──────────
+
+✓ Administrador por defecto no se puede eliminar si es único
+✓ Cambiar contraseña es obligatorio después de instalación
+✓ Solo administradores pueden gestionar usuarios
+✓ La protección está en el modelo, no solo en la vista
+✓ Validaciones redundantes en controlador y modelo
+
+
+VERSIÓN:
+────────
+v1.1 - Diciembre 2025
+Agregada protección de administrador por defecto
+
+═══════════════════════════════════════════════════════════════════════════════
