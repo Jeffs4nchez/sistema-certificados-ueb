@@ -122,5 +122,98 @@ class PresupuestoController {
         header('Location: index.php?action=presupuesto-list');
         exit;
     }
+
+    /**
+     * Exportar presupuestos a CSV
+     */
+    public function exportExcelAction() {
+        // Solo admin puede exportar
+        if (!PermisosHelper::puedeGestionarUsuarios()) {
+            PermisosHelper::denegarAcceso('Solo administradores pueden exportar presupuestos.');
+        }
+
+        // Limpiar output buffering
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $items = $this->presupuestoModel->getAll();
+        $resumen = $this->presupuestoModel->getResumen();
+
+        $filename = 'presupuestos_' . date('YmdHis') . '.csv';
+        
+        // Headers para CSV
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        // BOM para UTF-8 (para que Excel reconozca bien los caracteres acentuados)
+        echo "\xEF\xBB\xBF";
+        
+        $output = fopen('php://output', 'w');
+        
+        // Encabezado
+        fputcsv($output, ['REPORTE DE PRESUPUESTOS'], ',');
+        fputcsv($output, ['Fecha: ' . date('d/m/Y H:i:s')], ',');
+        fputcsv($output, [], ',');
+        
+        // Resumen
+        fputcsv($output, ['RESUMEN GENERAL'], ',');
+        fputcsv($output, ['Concepto', 'Valor'], ',');
+        fputcsv($output, ['Total Items', $resumen['total_items'] ?? 0], ',');
+        fputcsv($output, ['Total Codificado', $resumen['total_codificado'] ?? 0], ',');
+        fputcsv($output, ['Total Certificado', $resumen['total_certificado'] ?? 0], ',');
+        fputcsv($output, ['Saldo Disponible', $resumen['total_saldo_disponible'] ?? 0], ',');
+        fputcsv($output, [], ',');
+        
+        // Detalle
+        fputcsv($output, ['DETALLE DE PRESUPUESTOS'], ',');
+        fputcsv($output, ['#', 'Código Programa', 'Código Actividad', 'Código Fuente', 'Código Item', 'Descripción Item', 'Codificado', 'Certificado', 'Saldo Disponible'], ',');
+        
+        foreach ($items as $index => $item) {
+            fputcsv($output, [
+                $index + 1,
+                htmlspecialchars_decode($item['codigog1']),
+                htmlspecialchars_decode($item['codigog2']),
+                htmlspecialchars_decode($item['codigog3']),
+                htmlspecialchars_decode($item['codigog5']),
+                htmlspecialchars_decode($item['descripciong5']),
+                $item['col3'] ?? 0,
+                $item['col4'] ?? 0,
+                $item['saldo_disponible'] ?? 0
+            ], ',');
+        }
+        
+        fclose($output);
+        exit;
+    }
+
+
+    /**
+     * Exportar presupuestos a PDF
+     */
+    public function exportPdfAction() {
+        // Solo admin puede exportar
+        if (!PermisosHelper::puedeGestionarUsuarios()) {
+            PermisosHelper::denegarAcceso('Solo administradores pueden exportar presupuestos.');
+        }
+
+        // Limpiar output buffering
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        require_once __DIR__ . '/../helpers/SimplePdfGenerator.php';
+
+        $items = $this->presupuestoModel->getAll();
+        $resumen = $this->presupuestoModel->getResumen();
+
+        $filename = 'presupuestos_' . date('YmdHis') . '.pdf';
+        
+        // Generar PDF
+        $pdf = new SimplePdfGenerator($filename);
+        $pdf->generate($items, $resumen);
+        
+        exit;
+    }
 }
 ?>

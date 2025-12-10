@@ -15,6 +15,12 @@
             <a href="index.php?action=presupuesto-upload" class="btn btn-primary btn-sm">
                 <i class="fas fa-upload"></i> Importar CSV
             </a>
+            <a href="index.php?action=presupuesto-export-excel" class="btn btn-success btn-sm" title="Exportar a CSV">
+                <i class="fas fa-file-csv"></i> Exportar CSV
+            </a>
+            <a href="index.php?action=presupuesto-export-pdf" class="btn btn-danger btn-sm" title="Exportar a PDF">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </a>
             <?php endif; ?>
         </div>
     </div>

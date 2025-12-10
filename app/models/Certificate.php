@@ -508,7 +508,7 @@ class Certificate {
                 if ($presupuesto) {
                     $col3 = (float)($presupuesto['col3'] ?? 0);
                     $col4_anterior = (float)($presupuesto['col4'] ?? 0);
-                    $col4_nuevo = $col4_anterior - $cantidad_pendiente_nuevo;  // col4 -= cantidad_pendiente
+                    $col4_nuevo = $col4_anterior - $cantidad_liquidacion;  // col4 -= cantidad_liquidacion
                     $saldo_nuevo = $col3 - $col4_nuevo;  // saldo = col3 - col4
                     
                     error_log("📌 Presupuesto ANTES: col3=$col3, col4=$col4_anterior, saldo=" . ($presupuesto['saldo_disponible'] ?? 0));

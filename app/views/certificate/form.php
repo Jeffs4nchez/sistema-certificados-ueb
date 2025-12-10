@@ -311,6 +311,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     const API_ENDPOINT = 'index.php?action=api-certificate';
     let items = [];
 
+    // DESHABILITAR botón al iniciar (sin items)
+    document.getElementById('submitBtn').disabled = true;
+
     // Cargar el próximo número de certificado
     async function loadNextCertificateNumber() {
         try {

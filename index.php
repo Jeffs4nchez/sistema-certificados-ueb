@@ -43,6 +43,7 @@ if (!isset($_SESSION['usuario_id']) && !$is_public) {
 // Estas acciones SIEMPRE redirigen después de procesar
 $always_redirect_actions = ['bulk-upload', 'parameter-create', 'parameter-edit', 
                             'parameter-delete', 'presupuesto-delete', 
+                            'presupuesto-export-excel', 'presupuesto-export-pdf',
                             'certificate-delete'];
 // Estas acciones redirigen CONDICIONALMENTE (solo ciertos métodos)
 $redirect_actions = ['certificate-create', 'usuario', 'perfil', 'bulk-import', 'presupuesto-upload'];
@@ -220,6 +221,18 @@ try {
             require_once __DIR__ . '/app/controllers/PresupuestoController.php';
             $controller = new PresupuestoController();
             $controller->deleteAction($_GET['id']);
+            break;
+
+        case 'presupuesto-export-excel':
+            require_once __DIR__ . '/app/controllers/PresupuestoController.php';
+            $controller = new PresupuestoController();
+            $controller->exportExcelAction();
+            break;
+
+        case 'presupuesto-export-pdf':
+            require_once __DIR__ . '/app/controllers/PresupuestoController.php';
+            $controller = new PresupuestoController();
+            $controller->exportPdfAction();
             break;
 
         // ========== DEFAULT ==========
