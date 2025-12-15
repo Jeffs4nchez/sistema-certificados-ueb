@@ -197,6 +197,74 @@ class APICertificateController {
     }
 
     /**
+     * Obtener historial de liquidaciones de un certificado
+     */
+    public function getLiquidacionHistorialAction() {
+        $certificate_id = (int)($_GET['certificate_id'] ?? 0);
+        if (!$certificate_id) {
+            $this->jsonResponse(false, null, 'ID de certificado requerido');
+        }
+        
+        try {
+            // Obtener liquidaciones agrupadas por item
+            $stmt = $this->db->prepare("
+                SELECT 
+                    dc.id as detalle_id,
+                    dc.descripcion_item,
+                    dc.monto,
+                    l.id as liquidacion_id,
+                    l.cantidad_liquidacion,
+                    l.fecha_liquidacion,
+                    l.memorando,
+                    l.usuario_creacion
+                FROM liquidaciones l
+                INNER JOIN detalle_certificados dc ON l.detalle_certificado_id = dc.id
+                WHERE dc.certificado_id = ?
+                ORDER BY dc.id ASC, l.fecha_liquidacion DESC, l.id DESC
+            ");
+            $stmt->execute([$certificate_id]);
+            $liquidaciones_raw = $stmt->fetchAll();
+            
+            // Agrupar por item y calcular subtotales
+            $liquidaciones_agrupadas = [];
+            $total_general = 0;
+            
+            foreach ($liquidaciones_raw as $row) {
+                $detalle_id = $row['detalle_id'];
+                
+                if (!isset($liquidaciones_agrupadas[$detalle_id])) {
+                    $liquidaciones_agrupadas[$detalle_id] = [
+                        'detalle_id' => $detalle_id,
+                        'descripcion_item' => $row['descripcion_item'],
+                        'monto' => (float)$row['monto'],
+                        'subtotal' => 0,
+                        'liquidaciones' => []
+                    ];
+                }
+                
+                $cantidad = (float)$row['cantidad_liquidacion'];
+                $liquidaciones_agrupadas[$detalle_id]['subtotal'] += $cantidad;
+                $liquidaciones_agrupadas[$detalle_id]['liquidaciones'][] = [
+                    'id' => $row['liquidacion_id'],
+                    'cantidad' => $cantidad,
+                    'fecha' => $row['fecha_liquidacion'],
+                    'memorando' => $row['memorando'],
+                    'usuario' => $row['usuario_creacion']
+                ];
+                
+                $total_general += $cantidad;
+            }
+            
+            $this->jsonResponse(true, [
+                'liquidaciones' => array_values($liquidaciones_agrupadas),
+                'total_general' => $total_general
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse(false, null, 'Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Actualizar liquidación de un detalle
      */
     public function updateLiquidacionAction() {
@@ -251,14 +319,10 @@ class APICertificateController {
                 
                 try {
                     // USAR EL MÉTODO DEL MODELO QUE HACE TODO CORRECTAMENTE
-                    $resultado = $certificateModel->updateLiquidacion($detalleId, $cantidadLiquidacion);
+                    $resultado = $certificateModel->updateLiquidacion($detalleId, $cantidadLiquidacion, $memorando);
                     
-                    // Si updateLiquidacion fue exitoso, actualizar memorando
+                    // Si updateLiquidacion fue exitoso
                     if ($resultado['success']) {
-                        $query = "UPDATE detalle_certificados SET memorando = ?, fecha_actualizacion = NOW() WHERE id = ?";
-                        $stmt = $this->db->prepare($query);
-                        $stmt->execute([$memorando, $detalleId]);
-                        
                         error_log("✅ [API] Liquidación guardada correctamente: detalle_id=$detalleId, cantidad_liq=$cantidadLiquidacion, cantidad_pend=" . $resultado['cantidad_pendiente'] . ", memorando=$memorando");
                         $guardadas++;
                     }

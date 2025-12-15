@@ -316,14 +316,10 @@ class CertificateController {
                 
                 try {
                     // USAR EL MÉTODO DEL MODELO QUE HACE TODO CORRECTAMENTE
-                    $resultado = $this->certificateModel->updateLiquidacion($detalleId, $cantidadLiquidacion);
+                    $resultado = $this->certificateModel->updateLiquidacion($detalleId, $cantidadLiquidacion, $memorando);
                     
-                    // Si updateLiquidacion fue exitoso, actualizar memorando
+                    // Si updateLiquidacion fue exitoso
                     if ($resultado['success']) {
-                        $query = "UPDATE detalle_certificados SET memorando = ?, fecha_actualizacion = NOW() WHERE id = ?";
-                        $stmt = $this->certificateModel->db->prepare($query);
-                        $stmt->execute([$memorando, $detalleId]);
-                        
                         error_log("✅ Liquidación guardada correctamente: detalle_id=$detalleId, cantidad_liq=$cantidadLiquidacion, cantidad_pend=" . $resultado['cantidad_pendiente'] . ", memorando=$memorando");
                         $guardadas++;
                     }

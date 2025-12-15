@@ -421,7 +421,7 @@ class Certificate {
      * 4. presupuesto_items.saldo_disponible (col3 - col4)
      * 5. certificados.total_liquidado y total_pendiente
      */
-    public function updateLiquidacion($detalle_id, $cantidad_liquidacion) {
+    public function updateLiquidacion($detalle_id, $cantidad_liquidacion, $memorando = '') {
         try {
             $cantidad_liquidacion = (float)$cantidad_liquidacion;
             
@@ -437,25 +437,56 @@ class Certificate {
             $certificado_id = (int)$detalle['certificado_id'];
             $monto_original = (float)$detalle['monto'];
             $codigo_completo = (string)$detalle['codigo_completo'];
+            $cantidad_pendiente = (float)$detalle['cantidad_pendiente'];
             
-            error_log("📌 Liquidación INICIO: id=$detalle_id, monto=$monto_original, codigo=$codigo_completo, cantidad_liq_input=$cantidad_liquidacion");
+            error_log("📌 Liquidación INICIO: id=$detalle_id, monto=$monto_original, codigo=$codigo_completo, cantidad_liq_input=$cantidad_liquidacion, pendiente=$cantidad_pendiente");
             
-            // 2. VALIDAR CANTIDAD
-            if ($cantidad_liquidacion > $monto_original) {
-                throw new Exception("La liquidación ($cantidad_liquidacion) no puede superar el monto ($monto_original)");
-            }
-            
+            // 2. VALIDAR CANTIDAD NO SEA NEGATIVA
             if ($cantidad_liquidacion < 0) {
                 throw new Exception("La liquidación no puede ser negativa");
             }
             
-            // 3. CALCULAR cantidad_pendiente para ESTE ITEM
-            // cantidad_pendiente = monto - cantidad_liquidacion
-            $cantidad_pendiente_nuevo = $monto_original - $cantidad_liquidacion;
+            // 3. VALIDAR QUE NO SUPERE LA CANTIDAD PENDIENTE
+            if ($cantidad_liquidacion > $cantidad_pendiente) {
+                throw new Exception("La liquidación ($cantidad_liquidacion) no puede superar el saldo pendiente ($cantidad_pendiente)");
+            }
             
-            error_log("📌 Calculado: cantidad_pendiente=$cantidad_pendiente_nuevo (monto=$monto_original - liq=$cantidad_liquidacion)");
+            // 4. INSERTAR EN TABLA LIQUIDACIONES (crear histórico)
+            if ($cantidad_liquidacion > 0) {
+                $insertLiquidacion = $this->db->prepare("
+                    INSERT INTO liquidaciones (
+                        detalle_certificado_id, 
+                        cantidad_liquidacion, 
+                        fecha_liquidacion, 
+                        memorando, 
+                        usuario_creacion,
+                        fecha_creacion,
+                        fecha_actualizacion
+                    ) VALUES (?, ?, CURRENT_DATE, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ");
+                
+                $usuario = $_SESSION['usuario_nombre'] ?? 'SISTEMA';
+                
+                $insertLiquidacion->execute([
+                    $detalle_id,
+                    $cantidad_liquidacion,
+                    $memorando,
+                    $usuario
+                ]);
+            }
             
-            // 4. ACTUALIZAR detalle_certificados para ESTE ITEM
+            // 5. SUMAR TODAS LAS LIQUIDACIONES y actualizar detalle_certificados
+            $stmtSumaLiquidaciones = $this->db->prepare("
+                SELECT COALESCE(SUM(cantidad_liquidacion), 0) as total_liquidaciones
+                FROM liquidaciones
+                WHERE detalle_certificado_id = ?
+            ");
+            $stmtSumaLiquidaciones->execute([$detalle_id]);
+            $resultadoSuma = $stmtSumaLiquidaciones->fetch();
+            $cantidad_liquidacion_total = (float)($resultadoSuma['total_liquidaciones'] ?? 0);
+            $cantidad_pendiente_nuevo = $monto_original - $cantidad_liquidacion_total;
+            
+            // Actualizar detalle_certificados con los TOTALES ACUMULADOS
             $updateDetalle = $this->db->prepare("
                 UPDATE detalle_certificados 
                 SET cantidad_liquidacion = ?,
@@ -464,20 +495,15 @@ class Certificate {
                 WHERE id = ?
             ");
             
-            $resultado = $updateDetalle->execute([
-                $cantidad_liquidacion,
+            $updateDetalle->execute([
+                $cantidad_liquidacion_total,
                 $cantidad_pendiente_nuevo,
                 $detalle_id
             ]);
             
-            if (!$resultado) {
-                error_log("❌ Error al actualizar detalle_certificados: " . print_r($updateDetalle->errorInfo(), true));
-                throw new Exception("No se pudo actualizar detalle_certificados");
-            }
+            error_log("✅ Actualizado: detalle_id=$detalle_id, cantidad_liq_total=$cantidad_liquidacion_total, cantidad_pend=$cantidad_pendiente_nuevo");
             
-            error_log("✅ detalle_certificados actualizado: id=$detalle_id, cantidad_liq=$cantidad_liquidacion, cantidad_pend=$cantidad_pendiente_nuevo");
-            
-            // 5. VERIFICAR QUE SE ACTUALIZÓ CORRECTAMENTE
+            // 6. VERIFICAR
             $verify = $this->db->prepare("SELECT cantidad_liquidacion, cantidad_pendiente FROM detalle_certificados WHERE id = ?");
             $verify->execute([$detalle_id]);
             $verificacion = $verify->fetch();
@@ -508,10 +534,13 @@ class Certificate {
                 if ($presupuesto) {
                     $col3 = (float)($presupuesto['col3'] ?? 0);
                     $col4_anterior = (float)($presupuesto['col4'] ?? 0);
-                    $col4_nuevo = $col4_anterior - $cantidad_liquidacion;  // col4 -= cantidad_liquidacion
+                    // IMPORTANTE: Usar el cambio neto en liquidación (nueva_suma - cantidad anterior del detalle)
+                    $cambio_liquidacion = $cantidad_liquidacion_total - (float)($detalle['cantidad_liquidacion'] ?? 0);
+                    $col4_nuevo = $col4_anterior - $cambio_liquidacion;  // col4 -= cambio_liquidacion
                     $saldo_nuevo = $col3 - $col4_nuevo;  // saldo = col3 - col4
                     
                     error_log("📌 Presupuesto ANTES: col3=$col3, col4=$col4_anterior, saldo=" . ($presupuesto['saldo_disponible'] ?? 0));
+                    error_log("📌 Cambio liquidación: +$cambio_liquidacion (nueva_suma=$cantidad_liquidacion_total - anterior=" . (float)($detalle['cantidad_liquidacion'] ?? 0) . ")");
                     error_log("📌 Presupuesto NUEVO: col3=$col3, col4=$col4_nuevo, saldo=$saldo_nuevo");
                     
                     $updatePresupuesto = $this->db->prepare("
