@@ -349,5 +349,130 @@ class CertificateController {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    /**
+     * Acción para exportar certificados a CSV
+     */
+    public function exportAction() {
+        // Obtener certificados según el rol del usuario
+        if (PermisosHelper::esAdmin()) {
+            // Admin ve todos
+            $certificates = $this->certificateModel->getAll();
+        } else {
+            // Operador solo ve sus certificados
+            $usuario_id = PermisosHelper::getUsuarioIdActual();
+            $certificates = $this->certificateModel->getByUsuario($usuario_id);
+        }
+        
+        // Crear CSV
+        $filename = 'Reporte_Certificados_' . date('Y-m-d_H-i-s') . '.csv';
+        
+        // Headers para descargar como archivo
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        // Abrir el buffer de salida
+        $output = fopen('php://output', 'w');
+        
+        // Escribir BOM para UTF-8
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        // Encabezados principales del certificado
+        $headers = [
+            'Número Certificado',
+            'Institución',
+            'Usuario',
+            'Fecha',
+            'Monto Total',
+            'Liquidado',
+            'Pendiente',
+            'Sección Memorando',
+            'Descripción'
+        ];
+        
+        fputcsv($output, $headers, ';');
+        
+        // Escribir datos de certificados y sus detalles
+        foreach ($certificates as $cert) {
+            // Fila del certificado principal
+            $row = [
+                $cert['numero_certificado'] ?? 'N/A',
+                $cert['institucion'] ?? '',
+                $cert['usuario_creacion'] ?? 'Sistema',
+                date('d/m/Y', strtotime($cert['fecha_elaboracion'] ?? '2025-01-01')),
+                number_format($cert['monto_total'] ?? 0, 2, '.', ''),
+                number_format($cert['total_liquidado'] ?? 0, 2, '.', ''),
+                number_format($cert['total_pendiente'] ?? 0, 2, '.', ''),
+                $cert['seccion_memorando'] ?? '',
+                $cert['descripcion'] ?? ''
+            ];
+            fputcsv($output, $row, ';');
+            
+            // Obtener detalles del certificado
+            $db = Database::getInstance()->getConnection();
+            $stmtDetails = $db->prepare("
+                SELECT 
+                    programa_codigo,
+                    subprograma_codigo,
+                    proyecto_codigo,
+                    actividad_codigo,
+                    item_codigo,
+                    ubicacion_codigo,
+                    fuente_codigo,
+                    organismo_codigo,
+                    naturaleza_codigo,
+                    descripcion_item,
+                    monto
+                FROM detalle_certificados
+                WHERE certificado_id = ?
+                ORDER BY id ASC
+            ");
+            $stmtDetails->execute([$cert['id']]);
+            $detalles = $stmtDetails->fetchAll();
+            
+            // Escribir detalles con indentación
+            if (!empty($detalles)) {
+                // Encabezado de detalles
+                $detailHeaders = [
+                    '  → Detalle - Programa',
+                    'Subprograma',
+                    'Proyecto',
+                    'Actividad',
+                    'Item',
+                    'Ubicación',
+                    'Fuente',
+                    'Organismo',
+                    'Naturaleza',
+                    'Descripción Item',
+                    'Monto'
+                ];
+                fputcsv($output, $detailHeaders, ';');
+                
+                // Datos de detalles
+                foreach ($detalles as $detalle) {
+                    $detailRow = [
+                        '  ' . ($detalle['programa_codigo'] ?? ''),
+                        $detalle['subprograma_codigo'] ?? '',
+                        $detalle['proyecto_codigo'] ?? '',
+                        $detalle['actividad_codigo'] ?? '',
+                        $detalle['item_codigo'] ?? '',
+                        $detalle['ubicacion_codigo'] ?? '',
+                        $detalle['fuente_codigo'] ?? '',
+                        $detalle['organismo_codigo'] ?? '',
+                        $detalle['naturaleza_codigo'] ?? '',
+                        $detalle['descripcion_item'] ?? '',
+                        number_format($detalle['monto'] ?? 0, 2, '.', '')
+                    ];
+                    fputcsv($output, $detailRow, ';');
+                }
+            }
+            
+            // Línea en blanco entre certificados
+            fputcsv($output, [], ';');
+        }
+        
+        fclose($output);
+        exit;
+    }
 }
 ?>

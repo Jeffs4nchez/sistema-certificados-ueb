@@ -11,6 +11,9 @@
             <p class="text-muted">Gestión de certificados del sistema</p>
         </div>
         <div class="col-md-4 text-end">
+            <a href="index.php?action=certificate-export" class="btn btn-success me-2">
+                <i class="fas fa-download"></i> Exportar Reporte
+            </a>
             <a href="index.php?action=certificate-create" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Crear Certificado
             </a>
@@ -280,11 +283,10 @@ async function abrirModalRegistroLiquidacion(certificateId) {
                                 <th style="width: 6%;">PY</th>
                                 <th style="width: 6%;">ACT</th>
                                 <th style="width: 6%;">ITEM</th>
-                                <th style="width: 12%;">Descripción</th>
+                                <th style="width: 14%;">Descripción</th>
                                 <th style="width: 10%;">Monto</th>
-                                <th style="width: 12%;">Liquidación</th>
-                                <th style="width: 12%;">Saldo Pendiente</th>
-                                <th style="width: 20%;">Memorando</th>
+                                <th style="width: 14%;">Liquidación</th>
+                                <th style="width: 24%;">Memorando</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -302,18 +304,13 @@ async function abrirModalRegistroLiquidacion(certificateId) {
                         <td class="text-end"><strong>$ ${parseFloat(item.monto).toFixed(2)}</strong></td>
                         <td>
                             <input type="number" class="form-control form-control-sm liquidacion-input" 
-                                   value="${parseFloat(item.cantidad_liquidacion || 0).toFixed(2)}"
+                                   value=""
                                    data-detalle-id="${item.id}" 
                                    data-cantidad-pendiente="${parseFloat(item.cantidad_pendiente || 0).toFixed(2)}"
                                    step="0.01" min="0" 
                                    onchange="validarLiquidacion(this)" 
                                    oninput="mostrarAlerta(this)">
                             <small class="text-danger d-none validacion-error" data-detalle-id="${item.id}"></small>
-                        </td>
-                        <td class="text-end">
-                            <strong class="saldo-pendiente text-warning" data-detalle-id="${item.id}">
-                                $ ${parseFloat(item.cantidad_pendiente || 0).toFixed(2)}
-                            </strong>
                         </td>
                         <td>
                             <input type="text" class="form-control form-control-sm memorando-input" 

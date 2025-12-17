@@ -44,7 +44,7 @@ if (!isset($_SESSION['usuario_id']) && !$is_public) {
 $always_redirect_actions = ['bulk-upload', 'parameter-create', 'parameter-edit', 
                             'parameter-delete', 'presupuesto-delete', 
                             'presupuesto-export-excel', 'presupuesto-export-pdf',
-                            'certificate-delete'];
+                            'certificate-delete', 'certificate-export'];
 // Estas acciones redirigen CONDICIONALMENTE (solo ciertos métodos)
 $redirect_actions = ['certificate-create', 'usuario', 'perfil', 'bulk-import', 'presupuesto-upload'];
 $redirect_methods = [
@@ -146,6 +146,12 @@ try {
             require_once __DIR__ . '/app/controllers/CertificateController.php';
             $controller = new CertificateController();
             $controller->deleteAction($_GET['id']);
+            break;
+
+        case 'certificate-export':
+            require_once __DIR__ . '/app/controllers/CertificateController.php';
+            $controller = new CertificateController();
+            $controller->exportAction();
             break;
 
         // ========== API CERTIFICADOS (AJAX) ==========
