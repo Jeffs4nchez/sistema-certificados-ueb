@@ -340,24 +340,26 @@ class Certificate {
      */
     public function deleteDetail($id) {
         // Obtener el detalle a eliminar
-        $stmtGet = $this->db->prepare("SELECT monto, codigo_completo FROM detalle_certificados WHERE id = ?");
+        $stmtGet = $this->db->prepare("SELECT monto, codigo_completo, cantidad_pendiente FROM detalle_certificados WHERE id = ?");
         $stmtGet->execute([$id]);
         $detalle = $stmtGet->fetch();
         
         if (!$detalle) {
             throw new Exception("Detalle no encontrado: ID $id");
         }
-        
+
         $monto = (float)($detalle['monto'] ?? 0);
         $codigo_completo = (string)($detalle['codigo_completo'] ?? '');
+        $cantidad_pendiente = (float)($detalle['cantidad_pendiente'] ?? 0);
         
         // Eliminar el detalle
         $stmt = $this->db->prepare("DELETE FROM detalle_certificados WHERE id = ?");
         $resultado = $stmt->execute([$id]);
         
         // Si se eliminó correctamente, actualizar presupuesto_items
+        // IMPORTANTE: Solo restar lo que estaba PENDIENTE, no el monto total
         if ($resultado) {
-            $this->updatePresupuestoRemoveCertificado($codigo_completo, $monto);
+            $this->updatePresupuestoRemoveCertificado($codigo_completo, $cantidad_pendiente);
         }
         
         return $resultado;
