@@ -91,6 +91,8 @@ class BulkImportController {
 
             $rowCount = 0;
             $inserted = 0;
+            $updated = 0;
+            $skipped = 0;
             while (($row = fgetcsv($handle, 10000, ';')) !== FALSE) {
                 $rowCount++;
                 $data = [];
@@ -132,12 +134,39 @@ class BulkImportController {
                     ($data['cod_item'] ?? '')
                 );
                 if (!empty($data['cod_programa'])) {
-                    $this->parameterModel->createParameter($data);
-                    $inserted++;
+                    // Verificar si existe
+                    $existingRecord = $this->parameterModel->getByCodigoCompleto($data['codigo_completo']);
+                    
+                    if ($existingRecord) {
+                        // Verificar si algún campo ha cambiado
+                        $hasChanges = false;
+                        foreach ($data as $field => $value) {
+                            if ($field !== 'codigo_completo' && isset($existingRecord[$field])) {
+                                if ($existingRecord[$field] != $value) {
+                                    $hasChanges = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if ($hasChanges) {
+                            // Actualizar si hay cambios
+                            $this->parameterModel->updateByCodigoCompleto($data['codigo_completo'], $data);
+                            $updated++;
+                        } else {
+                            // No hay cambios
+                            $skipped++;
+                        }
+                    } else {
+                        // Insertar nuevo
+                        $this->parameterModel->createParameter($data);
+                        $inserted++;
+                    }
                 }
             }
             fclose($handle);
-            $_SESSION['success'] = "✓ Se importaron correctamente: $inserted registros";
+            $message = "✓ Se procesaron correctamente: $inserted nuevos | $updated actualizados | $skipped sin cambios";
+            $_SESSION['success'] = $message;
             header('Location: index.php?action=parameter-list');
             exit;
         } catch (Exception $e) {

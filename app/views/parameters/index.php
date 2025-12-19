@@ -200,48 +200,161 @@
     </div>
 </div>
 
-<!-- Modal para seleccionar tipo de parámetro -->
+<!-- Modal para crear nuevo parámetro completo -->
 <div class="modal fade" id="tipoModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-layer-group"></i> Seleccionar Tipo de Parámetro</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title text-white"><i class="fas fa-plus-circle"></i> Nuevo Parámetro Completo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="list-group">
-                    <a href="index.php?action=parameter-create&tipo=PG" class="list-group-item list-group-item-action">
-                        <strong>PG</strong> - Programas
-                    </a>
-                    <a href="index.php?action=parameter-create&tipo=SP" class="list-group-item list-group-item-action">
-                        <strong>SP</strong> - Subprogramas
-                    </a>
-                    <a href="index.php?action=parameter-create&tipo=PY" class="list-group-item list-group-item-action">
-                        <strong>PY</strong> - Proyectos
-                    </a>
-                    <a href="index.php?action=parameter-create&tipo=ACT" class="list-group-item list-group-item-action">
-                        <strong>ACT</strong> - Actividades
-                    </a>
-                    <a href="index.php?action=parameter-create&tipo=ITEM" class="list-group-item list-group-item-action">
-                        <strong>ITEM</strong> - Items Presupuestarios
-                    </a>
-                    <a href="index.php?action=parameter-create&tipo=UBG" class="list-group-item list-group-item-action">
-                        <strong>UBG</strong> - Ubicaciones Geográficas
-                    </a>
-                    <a href="index.php?action=parameter-create&tipo=FTE" class="list-group-item list-group-item-action">
-                        <strong>FTE</strong> - Fuentes de Financiamiento
-                    </a>
-                    <a href="index.php?action=parameter-create&tipo=ORG" class="list-group-item list-group-item-action">
-                        <strong>ORG</strong> - Organismos
-                    </a>
-                    <a href="index.php?action=parameter-create&tipo=N.PREST" class="list-group-item list-group-item-action">
-                        <strong>N.PREST</strong> - Naturaleza de Prestación
-                    </a>
+            <form method="POST" action="index.php?action=parameter-create">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    
+                    <div class="row">
+                        <!-- PROGRAMA -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_programa" class="form-label small">Código Programa</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_programa" name="cod_programa" placeholder="Ej: 01">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_programa" class="form-label small">Descripción Programa</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_programa" name="desc_programa" placeholder="Ej: ADMINISTRACION CENTRAL">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- SUBPROGRAMA -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_subprograma" class="form-label small">Código Subprograma</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_subprograma" name="cod_subprograma" placeholder="Ej: 00">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_subprograma" class="form-label small">Descripción Subprograma</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_subprograma" name="desc_subprograma" placeholder="Ej: SIN SUBPROGRAMA">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- PROYECTO -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_proyecto" class="form-label small">Código Proyecto</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_proyecto" name="cod_proyecto" placeholder="Ej: 000">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_proyecto" class="form-label small">Descripción Proyecto</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_proyecto" name="desc_proyecto" placeholder="Ej: SIN PROYECTO">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- ACTIVIDAD -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_actividad" class="form-label small">Código Actividad</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_actividad" name="cod_actividad" placeholder="Ej: 001">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_actividad" class="form-label small">Descripción Actividad</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_actividad" name="desc_actividad" placeholder="Ej: ADMINISTRACION DE LA GESTION INSTITUCIONAL">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- FUENTE -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_fuente" class="form-label small">Código Fuente</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_fuente" name="cod_fuente" placeholder="Ej: 003">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_fuente" class="form-label small">Descripción Fuente</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_fuente" name="desc_fuente" placeholder="Ej: Recursos Provenientes de Preasignaciones">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- UBICACIÓN -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_ubicacion" class="form-label small">Código Ubicación</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_ubicacion" name="cod_ubicacion" placeholder="Ej: 0200">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_ubicacion" class="form-label small">Descripción Ubicación</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_ubicacion" name="desc_ubicacion" placeholder="Ej: BOLIVAR">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- ITEM -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_item" class="form-label small">Código Item</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_item" name="cod_item" placeholder="Ej: 510105">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_item" class="form-label small">Descripción Item</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_item" name="desc_item" placeholder="Ej: Remuneraciones Unificadas">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- ORGANISMO -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_organismo" class="form-label small">Código Organismo</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_organismo" name="cod_organismo" placeholder="Ej: 0000">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_organismo" class="form-label small">Descripción Organismo</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_organismo" name="desc_organismo" placeholder="Ej: ORGANISMO NO IDENTIFICADO">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- NATURALEZA DE PRESTACIÓN -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cod_nprest" class="form-label small">Código N. Prest</label>
+                            <input type="text" class="form-control form-control-sm" id="cod_nprest" name="cod_nprest" placeholder="Ej: 0000">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="desc_nprest" class="form-label small">Descripción N. Prest</label>
+                            <input type="text" class="form-control form-control-sm" id="desc_nprest" name="desc_nprest" placeholder="Ej: Sin N. Prest">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- CÓDIGO COMPLETO (AUTO-GENERADO) -->
+                        <div class="col-md-12 mb-3">
+                            <label for="codigo_completo" class="form-label small">Código Completo (Auto-generado)</label>
+                            <input type="text" class="form-control form-control-sm" id="codigo_completo" name="codigo_completo" readonly style="background-color: #f5f5f5;">
+                        </div>
+                    </div>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Crear</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+// Auto-generar el código completo en el modal
+document.addEventListener('DOMContentLoaded', function() {
+    const campos = ['cod_programa', 'cod_subprograma', 'cod_proyecto', 'cod_actividad', 'cod_fuente', 'cod_ubicacion', 'cod_item'];
+    const completoInput = document.getElementById('codigo_completo');
+    
+    function actualizarCodigo() {
+        const valores = campos.map(id => document.getElementById(id).value.trim() || '').filter(v => v).join(' ');
+        completoInput.value = valores;
+    }
+    
+    campos.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', actualizarCodigo);
+        }
+    });
+});
+</script>
 
 <script>
 // Función para alternar todos los checkboxes

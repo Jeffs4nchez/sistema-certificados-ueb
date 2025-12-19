@@ -41,12 +41,12 @@ if (!isset($_SESSION['usuario_id']) && !$is_public) {
 
 // Rutas que pueden hacer redirecciones (acciones que hacen header() redirect)
 // Estas acciones SIEMPRE redirigen después de procesar
-$always_redirect_actions = ['bulk-upload', 'parameter-create', 'parameter-edit', 
-                            'parameter-delete', 'presupuesto-delete', 
+$always_redirect_actions = ['bulk-upload', 'parameter-delete', 
+                            'presupuesto-delete', 
                             'presupuesto-export-excel', 'presupuesto-export-pdf',
                             'certificate-delete', 'certificate-export'];
 // Estas acciones redirigen CONDICIONALMENTE (solo ciertos métodos)
-$redirect_actions = ['certificate-create', 'usuario', 'perfil', 'bulk-import', 'presupuesto-upload'];
+$redirect_actions = ['parameter-create', 'parameter-edit', 'certificate-create', 'usuario', 'perfil', 'bulk-import', 'presupuesto-upload'];
 $redirect_methods = [
     'usuario' => ['eliminar', 'crear', 'editar'],
     'perfil' => ['cambiar_contraseña'],

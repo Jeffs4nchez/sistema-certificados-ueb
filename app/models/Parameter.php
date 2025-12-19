@@ -301,4 +301,42 @@ class Parameter {
         
         return true;
     }
+
+    /**
+     * Obtener un parámetro por código completo
+     */
+    public function getByCodigoCompleto($codigo_completo) {
+        if (empty($codigo_completo) || trim($codigo_completo) === '') {
+            return null;
+        }
+        
+        $sql = "SELECT * FROM estructura_presupuestaria WHERE codigo_completo = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([trim($codigo_completo)]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Actualizar un parámetro por código completo
+     */
+    public function updateByCodigoCompleto($codigo_completo, $data) {
+        if (empty($codigo_completo) || empty($data)) {
+            return false;
+        }
+
+        // Construir la consulta UPDATE dinámicamente
+        $sets = [];
+        $bindings = [];
+        
+        foreach ($data as $field => $value) {
+            $sets[] = "$field = :$field";
+            $bindings[":$field"] = $value;
+        }
+        
+        $bindings[':codigo_completo'] = trim($codigo_completo);
+        $sql = 'UPDATE estructura_presupuestaria SET ' . implode(', ', $sets) . ' WHERE codigo_completo = :codigo_completo';
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($bindings);
+    }
 }

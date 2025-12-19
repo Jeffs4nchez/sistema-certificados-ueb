@@ -201,82 +201,71 @@ class ParameterController {
      * Crear nuevo parámetro
      */
     public function createAction() {
-        $tipos = $this->parameterModel->getParameterTypes();
-        $tipo_seleccionado = $_GET['tipo'] ?? null;
-        $programas = [];
-        $subprogramas = [];
-        $proyectos = [];
-        $actividades = [];
-        
-        // Si se envió el formulario
+        // Si se envió el formulario del modal
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
-                $tipo = $_POST['tipo'] ?? '';
-                if (!in_array($tipo, $tipos)) {
-                    throw new Exception('Tipo de parámetro inválido.');
-                }
-
+                // Obtener todos los datos del formulario
                 $data = [
-                    'tipo' => $tipo,
-                    'codigo' => $_POST['codigo'] ?? '',
-                    'descripcion' => $_POST['descripcion'] ?? ''
+                    'cod_programa' => $_POST['cod_programa'] ?? null,
+                    'desc_programa' => $_POST['desc_programa'] ?? null,
+                    'cod_subprograma' => $_POST['cod_subprograma'] ?? null,
+                    'desc_subprograma' => $_POST['desc_subprograma'] ?? null,
+                    'cod_proyecto' => $_POST['cod_proyecto'] ?? null,
+                    'desc_proyecto' => $_POST['desc_proyecto'] ?? null,
+                    'cod_actividad' => $_POST['cod_actividad'] ?? null,
+                    'desc_actividad' => $_POST['desc_actividad'] ?? null,
+                    'cod_fuente' => $_POST['cod_fuente'] ?? null,
+                    'desc_fuente' => $_POST['desc_fuente'] ?? null,
+                    'cod_ubicacion' => $_POST['cod_ubicacion'] ?? null,
+                    'desc_ubicacion' => $_POST['desc_ubicacion'] ?? null,
+                    'cod_item' => $_POST['cod_item'] ?? null,
+                    'desc_item' => $_POST['desc_item'] ?? null,
+                    'cod_organismo' => $_POST['cod_organismo'] ?? null,
+                    'desc_organismo' => $_POST['desc_organismo'] ?? null,
+                    'cod_nprest' => $_POST['cod_nprest'] ?? null,
+                    'desc_nprest' => $_POST['desc_nprest'] ?? null,
+                    'codigo_completo' => $_POST['codigo_completo'] ?? null
                 ];
 
-                // Validar campos comunes
-                if (empty($data['codigo']) || empty($data['descripcion'])) {
-                    throw new Exception('Código y descripción son requeridos.');
-                }
-
-                // Para tipos jerárquicos, agregar el parent_id
-                if ($tipo === 'SP') {
-                    $data['programa_id'] = intval($_POST['programa_id'] ?? 0);
-                    if ($data['programa_id'] === 0) {
-                        throw new Exception('Debe seleccionar un Programa.');
-                    }
-                } elseif ($tipo === 'PY') {
-                    $data['subprograma_id'] = intval($_POST['subprograma_id'] ?? 0);
-                    if ($data['subprograma_id'] === 0) {
-                        throw new Exception('Debe seleccionar un Subprograma.');
-                    }
-                } elseif ($tipo === 'ACT') {
-                    $data['proyecto_id'] = intval($_POST['proyecto_id'] ?? 0);
-                    if ($data['proyecto_id'] === 0) {
-                        throw new Exception('Debe seleccionar un Proyecto.');
-                    }
-                } elseif ($tipo === 'ITEM') {
-                    $data['actividad_id'] = intval($_POST['actividad_id'] ?? 0);
-                    if ($data['actividad_id'] === 0) {
-                        throw new Exception('Debe seleccionar una Actividad.');
+                // Limpiar valores vacíos a NULL
+                foreach ($data as $key => $value) {
+                    if (empty($value) || $value === '') {
+                        $data[$key] = null;
                     }
                 }
 
-                $this->parameterModel->createParameter($data);
-                $_SESSION['success'] = 'Parámetro creado correctamente.';
-                header('Location: index.php?action=parameter-list&type=' . urlencode($tipo));
-                exit;
+                // Validar que al menos un campo esté completo
+                $hasData = false;
+                foreach ($data as $value) {
+                    if ($value !== null) {
+                        $hasData = true;
+                        break;
+                    }
+                }
+
+                if (!$hasData) {
+                    throw new Exception('Debe completar al menos un campo.');
+                }
+
+                $result = $this->parameterModel->createParameter($data);
+                
+                if ($result) {
+                    $_SESSION['success'] = 'Parámetro creado correctamente.';
+                    header('Location: index.php?action=parameter-list');
+                    exit;
+                } else {
+                    throw new Exception('Error al crear el parámetro.');
+                }
             } catch (Exception $e) {
                 $_SESSION['error'] = 'Error: ' . $e->getMessage();
-            }
-        }
-
-        // Si se seleccionó un tipo, cargar datos relacionados
-        if ($tipo_seleccionado) {
-            if ($tipo_seleccionado === 'SP') {
-                $programas = $this->parameterModel->getPrograms();
-                $programas = $this->addHierarchicalCodes($programas, 'PG');
-            } elseif ($tipo_seleccionado === 'PY') {
-                $subprogramas = $this->parameterModel->getParametersByType('SP');
-                $subprogramas = $this->addHierarchicalCodes($subprogramas, 'SP');
-            } elseif ($tipo_seleccionado === 'ACT') {
-                $proyectos = $this->parameterModel->getParametersByType('PY');
-                $proyectos = $this->addHierarchicalCodes($proyectos, 'PY');
-            } elseif ($tipo_seleccionado === 'ITEM') {
-                $actividades = $this->parameterModel->getParametersByType('ACT');
-                $actividades = $this->addHierarchicalCodes($actividades, 'ACT');
+                header('Location: index.php?action=parameter-list');
+                exit;
             }
         }
         
-        require_once __DIR__ . '/../views/parameters/form.php';
+        // Si no es POST, redirigir a la lista
+        header('Location: index.php?action=parameter-list');
+        exit;
     }
     
     /**
