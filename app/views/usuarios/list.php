@@ -114,6 +114,12 @@
                                    class="btn btn-sm btn-warning" title="Editar" style="display: inline-block; margin: 2px;">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#resetModal<?php echo $usuario['id']; ?>"
+                                        title="Resetear contraseña" style="display: inline-block; margin: 2px;">
+                                    <i class="bi bi-key"></i>
+                                </button>
                                 <?php if ($usuario['estado'] === 'activo'): ?>
                                     <a href="?action=usuario&method=eliminar&id=<?php echo $usuario['id']; ?>" 
                                        class="btn btn-sm btn-danger" 
@@ -130,3 +136,53 @@
         </div>
     <?php endif; ?>
 </div>
+
+<?php if (!empty($usuarios)): ?>
+    <!-- Modales para resetear contraseña -->
+    <?php foreach ($usuarios as $usuario): ?>
+    <div class="modal fade" id="resetModal<?php echo $usuario['id']; ?>" tabindex="-1" aria-labelledby="resetLabel<?php echo $usuario['id']; ?>" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="resetLabel<?php echo $usuario['id']; ?>">Resetear Contraseña</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Usuario:</strong> <?php echo htmlspecialchars($usuario['nombre'] . ' ' . $usuario['apellidos']); ?></p>
+                    <p><strong>Correo:</strong> <?php echo htmlspecialchars($usuario['correo_institucional']); ?></p>
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Advertencia:</strong> Se generará una contraseña temporal de 8 caracteres. 
+                        Debes compartirla de manera segura con el usuario.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <form method="POST" action="?action=usuario&method=resetearContraseña" style="display: inline;">
+                        <input type="hidden" name="action" value="usuario">
+                        <input type="hidden" name="method" value="resetearContraseña">
+                        <input type="hidden" name="id" value="<?php echo $usuario['id']; ?>">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-key"></i> Resetear Contraseña
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<script>
+    // Si hay un mensaje de éxito con contraseña, mostrar un alert especial
+    document.addEventListener('DOMContentLoaded', function() {
+        const successAlerts = document.querySelectorAll('.alert-success');
+        successAlerts.forEach(alert => {
+            if (alert.innerHTML.includes('<strong>')) {
+                // Hacer que el alert sea más visible
+                alert.classList.add('alert-warning', 'border-warning');
+                alert.classList.remove('alert-success');
+            }
+        });
+    });
+</script>

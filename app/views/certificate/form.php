@@ -74,17 +74,17 @@ $isEdit = isset($certificate) && $certificate;
                                        required>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <label for="seccion_memorando" class="form-label small">Sección / Memorando</label>
+                                <label for="seccion_memorando" class="form-label small">Sección / Memorando <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" id="seccion_memorando" name="seccion_memorando" 
                                        value="<?php echo htmlspecialchars($certificate['seccion_memorando'] ?? ''); ?>" 
-                                       placeholder="Ej: PRESUPUESTO">
+                                       placeholder="Ej: PRESUPUESTO" required>
                             </div>
                         </div>
 
                         <div class="row g-2">
                             <div class="col-md-12 mb-2">
-                                <label for="descripcion_general" class="form-label small">Descripción General</label>
-                                <textarea class="form-control form-control-sm" id="descripcion_general" name="descripcion_general" rows="2"><?php 
+                                <label for="descripcion_general" class="form-label small">Descripción General <span class="text-danger">*</span></label>
+                                <textarea class="form-control form-control-sm" id="descripcion_general" name="descripcion_general" rows="2" required><?php 
                                     echo htmlspecialchars($certificate['descripcion'] ?? ''); 
                                 ?></textarea>
                             </div>
@@ -92,46 +92,46 @@ $isEdit = isset($certificate) && $certificate;
 
                         <div class="row g-2">
                             <div class="col-md-6 mb-2">
-                                <label for="unid_ejecutora" class="form-label small">Unidad Ejecutora</label>
+                                <label for="unid_ejecutora" class="form-label small">Unidad Ejecutora <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" id="unid_ejecutora" name="unid_ejecutora" 
                                        value="<?php echo htmlspecialchars($certificate['unid_ejecutora'] ?? ''); ?>"
-                                       placeholder="Código de unidad ejecutora">
+                                       placeholder="Código de unidad ejecutora" required>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <label for="unid_desc" class="form-label small">Descripción Unidad Ejecutora</label>
+                                <label for="unid_desc" class="form-label small">Descripción Unidad Ejecutora <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" id="unid_desc" name="unid_desc" 
                                        value="<?php echo htmlspecialchars($certificate['unid_desc'] ?? ''); ?>"
-                                       placeholder="Descripción de la unidad">
+                                       placeholder="Descripción de la unidad" required>
                             </div>
                         </div>
 
                         <div class="row g-2">
                             <div class="col-md-6 mb-2">
-                                <label for="clase_registro" class="form-label small">Clase de Registro</label>
+                                <label for="clase_registro" class="form-label small">Clase de Registro <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" id="clase_registro" name="clase_registro" 
                                        value="<?php echo htmlspecialchars($certificate['clase_registro'] ?? ''); ?>"
-                                       placeholder="Ej: MODIFICATIVO">
+                                       placeholder="Ej: MODIFICATIVO" required>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <label for="clase_gasto" class="form-label small">Clase de Gasto</label>
+                                <label for="clase_gasto" class="form-label small">Clase de Gasto <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" id="clase_gasto" name="clase_gasto" 
                                        value="<?php echo htmlspecialchars($certificate['clase_gasto'] ?? ''); ?>"
-                                       placeholder="Ej: CORRIENTE">
+                                       placeholder="Ej: CORRIENTE" required>
                             </div>
                         </div>
 
                         <div class="row g-2">
                             <div class="col-md-6 mb-2">
-                                <label for="tipo_doc_respaldo" class="form-label small">Tipo de Documento Respaldo</label>
+                                <label for="tipo_doc_respaldo" class="form-label small">Tipo de Documento Respaldo <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" id="tipo_doc_respaldo" name="tipo_doc_respaldo" 
                                        value="<?php echo htmlspecialchars($certificate['tipo_doc_respaldo'] ?? ''); ?>"
-                                       placeholder="Ej: FACTURA">
+                                       placeholder="Ej: FACTURA" required>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <label for="clase_doc_respaldo" class="form-label small">Clase de Documento Respaldo</label>
+                                <label for="clase_doc_respaldo" class="form-label small">Clase de Documento Respaldo <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" id="clase_doc_respaldo" name="clase_doc_respaldo" 
                                        value="<?php echo htmlspecialchars($certificate['clase_doc_respaldo'] ?? ''); ?>"
-                                       placeholder="Ej: DOCUMENTO">
+                                       placeholder="Ej: DOCUMENTO" required>
                             </div>
                         </div>
                     </div>
@@ -311,8 +311,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     const API_ENDPOINT = 'index.php?action=api-certificate';
     let items = [];
 
+    // Cargar items existentes si estamos en modo edición
+    <?php if ($isEdit && !empty($itemsJson)): ?>
+    try {
+        const existingItems = <?php echo $itemsJson; ?>;
+        if (Array.isArray(existingItems) && existingItems.length > 0) {
+            items = existingItems;
+            console.log('✓ Items cargados desde certificado existente:', items);
+        }
+    } catch (error) {
+        console.error('Error cargando items existentes:', error);
+    }
+    <?php endif; ?>
+
     // DESHABILITAR botón al iniciar (sin items)
-    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').disabled = items.length === 0;
 
     // Cargar el próximo número de certificado
     async function loadNextCertificateNumber() {
@@ -361,6 +374,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Cargar códigos al iniciar (sin llenar selects aún)
     await loadPresupuestoCodigos();
+    
     async function loadData(apiAction, params) {
         try {
             let url = 'index.php?action=api-certificate&action-api=' + apiAction;
@@ -693,11 +707,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // EVENTO: Enviar formulario
     document.getElementById('certificateForm').addEventListener('submit', function(e) {
-        // Solo prevenir si NO hay items (para validación)
-        // Si hay items, continuar normalmente con el envío
-        
         console.log('📋 Items actuales:', items);
         console.log('📊 Count items:', items.length);
+        
+        // VALIDACIÓN: Verificar que haya al menos 1 item
+        if (!items || items.length === 0) {
+            e.preventDefault();
+            alert('❌ Debes agregar al menos 1 item al certificado antes de guardar');
+            return false;
+        }
         
         // Preparar los datos de items
         const itemsJson = JSON.stringify(items);
@@ -707,6 +725,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('✅ Permitiendo envío de formulario...');
         // NO llamamos a e.preventDefault() - dejamos que se envíe normalmente
     });
+    
+    // Renderizar items si se cargaron desde edición
+    if (items.length > 0) {
+        renderItems();
+        updateTotal();
+    }
 });
 </script>
 

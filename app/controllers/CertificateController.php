@@ -42,6 +42,30 @@ class CertificateController {
                 error_log('=== INICIO DE CREATE CERTIFICADO ===');
                 error_log('POST data: ' . print_r($_POST, true));
                 
+                // VALIDACIÓN: Verificar campos obligatorios
+                $camposObligatorios = [
+                    'name' => 'Institución',
+                    'seccion_memorando' => 'Sección / Memorando',
+                    'descripcion_general' => 'Descripción General',
+                    'unid_ejecutora' => 'Unidad Ejecutora',
+                    'unid_desc' => 'Descripción Unidad Ejecutora',
+                    'clase_registro' => 'Clase de Registro',
+                    'clase_gasto' => 'Clase de Gasto',
+                    'tipo_doc_respaldo' => 'Tipo de Documento Respaldo',
+                    'clase_doc_respaldo' => 'Clase de Documento Respaldo'
+                ];
+                
+                $erroresValidacion = [];
+                foreach ($camposObligatorios as $campo => $etiqueta) {
+                    if (empty(trim($_POST[$campo] ?? ''))) {
+                        $erroresValidacion[] = "El campo '{$etiqueta}' es obligatorio";
+                    }
+                }
+                
+                if (!empty($erroresValidacion)) {
+                    throw new Exception("❌ Por favor completa todos los campos:\n" . implode("\n", $erroresValidacion));
+                }
+                
                 // Datos del certificado maestro
                 // Convertir fecha de dd/mm/yyyy a yyyy-mm-dd si es necesario
                 $dateInput = $_POST['date'] ?? date('d/m/Y');
@@ -53,17 +77,17 @@ class CertificateController {
                 
                 $certificateData = [
                     'numero_certificado' => $_POST['numero'] ?? 'CERT-' . date('YmdHis'),
-                    'institucion' => $_POST['name'] ?? '',
-                    'seccion_memorando' => $_POST['seccion_memorando'] ?? '',
-                    'descripcion' => $_POST['descripcion_general'] ?? '',
+                    'institucion' => trim($_POST['name']),
+                    'seccion_memorando' => trim($_POST['seccion_memorando']),
+                    'descripcion' => trim($_POST['descripcion_general']),
                     'fecha_elaboracion' => $fechaElaboracion,
                     'monto_total' => 0, // Se calculará de los items
-                    'unid_ejecutora' => $_POST['unid_ejecutora'] ?? '',
-                    'unid_desc' => $_POST['unid_desc'] ?? '',
-                    'clase_registro' => $_POST['clase_registro'] ?? '',
-                    'clase_gasto' => $_POST['clase_gasto'] ?? '',
-                    'tipo_doc_respaldo' => $_POST['tipo_doc_respaldo'] ?? '',
-                    'clase_doc_respaldo' => $_POST['clase_doc_respaldo'] ?? '',
+                    'unid_ejecutora' => trim($_POST['unid_ejecutora']),
+                    'unid_desc' => trim($_POST['unid_desc']),
+                    'clase_registro' => trim($_POST['clase_registro']),
+                    'clase_gasto' => trim($_POST['clase_gasto']),
+                    'tipo_doc_respaldo' => trim($_POST['tipo_doc_respaldo']),
+                    'clase_doc_respaldo' => trim($_POST['clase_doc_respaldo']),
                     'usuario_id' => $_SESSION['usuario_id'] ?? null,
                     'usuario_creacion' => ($_SESSION['usuario_nombre'] ?? 'Sistema')
                 ];
@@ -73,6 +97,11 @@ class CertificateController {
                 // Parsear los items desde JSON
                 $itemsJson = $_POST['items_data'] ?? '[]';
                 $items = json_decode($itemsJson, true);
+                
+                // VALIDACIÓN: Verificar que haya al menos 1 item
+                if (empty($items) || !is_array($items) || count($items) === 0) {
+                    throw new Exception("❌ Debes agregar al menos 1 item al certificado");
+                }
                 
                 // DEBUG logging
                 error_log('=== CERTIFICADO CREATE DEBUG ===');
@@ -213,6 +242,43 @@ class CertificateController {
         $organismos = $this->certificateItemModel->getOrganismos();
         $naturalezas = $this->certificateItemModel->getNaturalezas();
         
+        // Obtener los items agregados al certificado
+        $certificateItems = $this->certificateModel->getCertificateDetails($id);
+        
+        // Convertir items a formato esperado por el formulario
+        $itemsForForm = [];
+        if (is_array($certificateItems)) {
+            foreach ($certificateItems as $item) {
+                $itemsForForm[] = [
+                    'id' => $item['id'],
+                    'item_id' => $item['item_codigo'],
+                    'programa_id' => 0,
+                    'subprograma_id' => 0,
+                    'proyecto_id' => 0,
+                    'actividad_id' => 0,
+                    'programa_codigo' => $item['programa_codigo'],
+                    'subprograma_codigo' => $item['subprograma_codigo'],
+                    'proyecto_codigo' => $item['proyecto_codigo'],
+                    'actividad_codigo' => $item['actividad_codigo'],
+                    'item_codigo' => $item['item_codigo'],
+                    'ubicacion_id' => 0,
+                    'ubicacion_codigo' => $item['ubicacion_codigo'],
+                    'fuente_id' => 0,
+                    'fuente_codigo' => $item['fuente_codigo'],
+                    'organismo_id' => $item['organismo_id'] ?? 0,
+                    'organismo_codigo' => $item['organismo_codigo'],
+                    'naturaleza_id' => $item['naturaleza_id'] ?? 0,
+                    'naturaleza_codigo' => $item['naturaleza_codigo'],
+                    'item_descripcion' => $item['descripcion_item'],
+                    'monto' => floatval($item['monto']),
+                    'certificado_id' => $id
+                ];
+            }
+        }
+        
+        // Convertir a JSON para pasar a la vista
+        $itemsJson = json_encode($itemsForForm);
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $data = [
@@ -239,6 +305,87 @@ class CertificateController {
         }
         
         require_once __DIR__ . '/../views/certificate/form.php';
+    }
+    
+    /**
+     * Actualizar certificado (vía AJAX desde modal)
+     */
+    public function updateAction($id) {
+        // Limpiar output buffer
+        ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        
+        try {
+            error_log('=== UPDATE CERTIFICATE DEBUG ===');
+            error_log('ID: ' . $id);
+            error_log('POST data: ' . print_r($_POST, true));
+            
+            // Cargar helper de permisos
+            require_once __DIR__ . '/../helpers/PermisosHelper.php';
+            
+            // Validar que sea admin
+            if (!PermisosHelper::puedeEditarCertificado(null)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Solo administradores pueden editar certificados.'
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            
+            // Obtener el certificado actual
+            $certificate = $this->certificateModel->getById($id);
+            if (!$certificate) {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Certificado no encontrado'
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            
+            // Preparar datos para actualización
+            $data = [
+                'numero_certificado' => isset($_POST['numero_certificado']) ? trim($_POST['numero_certificado']) : $certificate['numero_certificado'],
+                'institucion' => isset($_POST['institucion']) ? trim($_POST['institucion']) : '',
+                'seccion_memorando' => isset($_POST['seccion_memorando']) ? trim($_POST['seccion_memorando']) : '',
+                'descripcion' => isset($_POST['descripcion_general']) ? trim($_POST['descripcion_general']) : '',
+                'fecha_elaboracion' => isset($_POST['fecha_elaboracion']) ? trim($_POST['fecha_elaboracion']) : $certificate['fecha_elaboracion'],
+                'unid_ejecutora' => isset($_POST['unid_ejecutora']) ? trim($_POST['unid_ejecutora']) : '',
+                'unid_desc' => isset($_POST['unid_desc']) ? trim($_POST['unid_desc']) : '',
+                'clase_registro' => isset($_POST['clase_registro']) ? trim($_POST['clase_registro']) : '',
+                'clase_gasto' => isset($_POST['clase_gasto']) ? trim($_POST['clase_gasto']) : '',
+                'tipo_doc_respaldo' => isset($_POST['tipo_doc_respaldo']) ? trim($_POST['tipo_doc_respaldo']) : '',
+                'clase_doc_respaldo' => isset($_POST['clase_doc_respaldo']) ? trim($_POST['clase_doc_respaldo']) : ''
+            ];
+            
+            error_log('Datos a actualizar: ' . json_encode($data));
+            
+            // Ejecutar actualización
+            $result = $this->certificateModel->updateCertificate($id, $data);
+            
+            if ($result) {
+                error_log('✓ Certificado actualizado correctamente');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Certificado actualizado correctamente'
+                ], JSON_UNESCAPED_UNICODE);
+            } else {
+                error_log('❌ updateCertificate retornó false');
+                throw new Exception('No se pudo actualizar el certificado en la base de datos');
+            }
+            exit;
+        } catch (Exception $e) {
+            error_log('❌ Exception en updateAction: ' . $e->getMessage());
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
     }
     
     public function viewAction($id) {

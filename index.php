@@ -7,8 +7,19 @@
 // Iniciar sesión
 session_start();
 
-// Configuración de headers
-header('Content-Type: text/html; charset=utf-8');
+// Obtener acción del GET o usar auth como default
+$action = isset($_GET['action']) ? trim($_GET['action']) : 'auth';
+
+// Si viene vacío, usar auth
+if (empty($action)) {
+    $action = 'auth';
+}
+
+// Configuración de headers - NO establecer para acciones de API/update
+$api_actions = ['api-certificate', 'certificate-update'];
+if (!in_array($action, $api_actions)) {
+    header('Content-Type: text/html; charset=utf-8');
+}
 
 // Cargar bootstrap para inicializar la aplicación
 require_once __DIR__ . '/bootstrap.php';
@@ -19,14 +30,6 @@ $markerFile = __DIR__ . '/.db-installed';
 if (file_exists($dbPath) && !file_exists($markerFile)) {
     include $dbPath;
     touch($markerFile); // Marcar que ya se instaló
-}
-
-// Obtener acción del GET o usar auth como default
-$action = isset($_GET['action']) ? trim($_GET['action']) : 'auth';
-
-// Si viene vacío, usar auth
-if (empty($action)) {
-    $action = 'auth';
 }
 
 // Las rutas de autenticación NO requieren sesión
@@ -65,8 +68,9 @@ if ($may_redirect) {
 
 // Enrutador
 try {
-    // Cargar layout ANTES de ejecutar controladores (excepto auth y API)
-    if ($action !== 'auth' && $action !== 'api-certificate' && !$may_redirect) {
+    // Cargar layout ANTES de ejecutar controladores (excepto auth, API y acciones AJAX)
+    $ajax_actions = ['auth', 'api-certificate', 'certificate-update'];
+    if (!in_array($action, $ajax_actions) && !$may_redirect) {
         require_once __DIR__ . '/app/views/layout/sidebar.php';
     }
 
@@ -132,6 +136,13 @@ try {
             require_once __DIR__ . '/app/controllers/CertificateController.php';
             $controller = new CertificateController();
             $controller->editAction($_GET['id']);
+            break;
+
+        case 'certificate-update':
+            if (!isset($_POST['id'])) throw new Exception('ID requerido');
+            require_once __DIR__ . '/app/controllers/CertificateController.php';
+            $controller = new CertificateController();
+            $controller->updateAction($_POST['id']);
             break;
 
         case 'certificate-view':

@@ -1,0 +1,195 @@
+================================================================================
+VALIDACIÓN OBLIGATORIA DE CAMPOS EN CERTIFICADOS
+================================================================================
+
+FECHA: 6 de Enero de 2026
+VERSIÓN: 2.2
+
+================================================================================
+CAMBIOS REALIZADOS:
+================================================================================
+
+1. CONTROLADOR (app/controllers/CertificateController.php)
+   
+   ✓ Agregada validación de campos obligatorios en createAction()
+   
+   Campos obligatorios validados:
+   - Institución (name)
+   - Sección / Memorando (seccion_memorando)
+   - Descripción General (descripcion_general)
+   - Unidad Ejecutora (unid_ejecutora)
+   - Descripción Unidad Ejecutora (unid_desc)
+   - Clase de Registro (clase_registro)
+   - Clase de Gasto (clase_gasto)
+   - Tipo de Documento Respaldo (tipo_doc_respaldo)
+   - Clase de Documento Respaldo (clase_doc_respaldo)
+   
+   ✓ Si falta algún campo, se muestra error:
+     "❌ Por favor completa todos los campos:"
+     [Lista de campos faltantes]
+   
+   ✓ Validación de al menos 1 item agregado
+     Si no hay items: "❌ Debes agregar al menos 1 item al certificado"
+
+
+2. VISTA (app/views/certificate/form.php)
+   
+   ✓ Agregado atributo 'required' a todos los campos obligatorios
+   ✓ Agregado indicador visual: <span class="text-danger">*</span>
+   
+   Campos con validación HTML5:
+   - Institución
+   - Sección / Memorando
+   - Descripción General
+   - Unidad Ejecutora
+   - Descripción Unidad Ejecutora
+   - Clase de Registro
+   - Clase de Gasto
+   - Tipo de Documento Respaldo
+   - Clase de Documento Respaldo
+   
+   ✓ Validación JavaScript al enviar formulario
+     - Verifica que haya al menos 1 item
+     - Muestra alerta si falta algún item
+
+
+================================================================================
+FLUJO DE VALIDACIÓN:
+================================================================================
+
+1. FRONTEND (HTML5 + JavaScript):
+   - Campos marcan como "requeridos" en HTML
+   - Al enviar, JavaScript verifica items
+   - Si no hay items → Muestra alerta y previene envío
+
+2. BACKEND (PHP):
+   - Verifica que TODOS los campos obligatorios estén completos
+   - Verifica que haya al menos 1 item (con datos válidos)
+   - Si hay errores, muestra mensaje de error
+   - Si todo está bien, guarda el certificado
+
+================================================================================
+COMPORTAMIENTO DEL SISTEMA:
+================================================================================
+
+ESCENARIO 1: Intenta guardar sin completar campos
+└─> Navegador muestra popup HTML5: "Este campo es obligatorio"
+└─> No envía el formulario
+
+ESCENARIO 2: Intenta guardar sin agregar items
+└─> JavaScript valida: "❌ Debes agregar al menos 1 item al certificado"
+└─> No envía el formulario
+
+ESCENARIO 3: Envía por otro método (API, etc.) sin campos obligatorios
+└─> PHP valida y rechaza con error claro
+└─> Muestra: "❌ Por favor completa todos los campos:"
+
+ESCENARIO 4: Todo está correcto
+└─> Certificado se crea exitosamente
+└─> Redirige a lista de certificados
+└─> Muestra: "Certificado creado correctamente con X items"
+
+================================================================================
+INDICADORES VISUALES:
+================================================================================
+
+Los campos obligatorios tienen:
+- Etiqueta con asterisco rojo: "Campo Obligatorio *"
+- Atributo required en HTML
+- Validación visual del navegador si está vacío
+
+================================================================================
+EJEMPLOS DE ERRORES:
+================================================================================
+
+❌ CASO 1: Falta "Institución"
+Error: "El campo 'Institución' es obligatorio"
+
+❌ CASO 2: Falta "Clase de Gasto"
+Error: "El campo 'Clase de Gasto' es obligatorio"
+
+❌ CASO 3: No hay items agregados
+Error: "Debes agregar al menos 1 item al certificado"
+
+================================================================================
+TESTING:
+================================================================================
+
+Para probar los cambios:
+
+1. Ir a: Crear Certificado
+2. Dejar algún campo en blanco (ej: Institución)
+3. Hacer clic en "Guardar"
+   → Deberías ver: "Este campo es obligatorio"
+
+4. Completar todos los campos EXCEPTO agregar items
+5. Hacer clic en "Guardar"
+   → Deberías ver: "❌ Debes agregar al menos 1 item al certificado"
+
+6. Agregar un item y completar todos los campos
+7. Hacer clic en "Guardar"
+   → Deberías ver: "Certificado creado correctamente con 1 items"
+
+================================================================================
+IMPACTO:
+================================================================================
+
+✓ Mayor control de calidad de datos
+✓ Menos certificados incompletos en BD
+✓ Mejor experiencia del usuario con mensajes claros
+✓ Validación en cliente (rápida) y servidor (segura)
+✓ Cumple con estándares de datos consistentes
+
+================================================================================
+COMPATIBILIDAD:
+================================================================================
+
+✓ Todos los navegadores modernos (Chrome, Firefox, Edge, Safari)
+✓ HTML5 tiene fallback amigable para navegadores antiguos
+✓ Validación PHP garantiza seguridad incluso sin JavaScript
+✓ Compatible con mobile
+
+================================================================================
+ARCHIVOS MODIFICADOS:
+================================================================================
+
+1. app/controllers/CertificateController.php
+   - Línea ~40-75: Agregada validación de campos obligatorios
+
+2. app/views/certificate/form.php
+   - Línea ~81: Agregado 'required' a campo Institución
+   - Línea ~89: Agregado 'required' a Sección/Memorando
+   - Línea ~96-97: Agregado 'required' a Descripción General
+   - Línea ~104-109: Agregado 'required' a Unidad Ejecutora y Descripción
+   - Línea ~116-121: Agregado 'required' a Clase Registro y Clase Gasto
+   - Línea ~128-133: Agregado 'required' a Documentos Respaldo
+   - Línea ~710-720: Agregada validación JavaScript de items
+
+================================================================================
+NOTA IMPORTANTE:
+================================================================================
+
+Los campos que ERAN OPCIONALES y AHORA SON OBLIGATORIOS:
+- Sección / Memorando
+- Descripción General
+- Unidad Ejecutora
+- Descripción Unidad Ejecutora
+- Clase de Registro
+- Clase de Gasto
+- Tipo de Documento Respaldo
+- Clase de Documento Respaldo
+
+Esto asegura que cada certificado tenga información COMPLETA y CONSISTENTE.
+
+================================================================================
+FUTURAS MEJORAS (OPCIONAL):
+================================================================================
+
+Se podría agregar:
+1. Validación de formato (ej: Código de Unidad Ejecutora sea número)
+2. Búsqueda automática de Unidades Ejecutoras
+3. Combo-box para Clase de Registro, Gasto, etc. en lugar de texto libre
+4. Validación de rango de montos
+5. Verificación de duplicados (no crear 2 certificados idénticos)
+
+================================================================================

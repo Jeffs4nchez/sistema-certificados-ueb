@@ -679,17 +679,18 @@ class Certificate {
     }
 
     /**
-     * Obtener totales globales de monto y liquidado
+     * Obtener totales globales de pendiente (no certificado) y liquidado
+     * NOTA: "total_monto" ahora es la suma de total_pendiente, no monto_total
      */
     public function getTotalsGlobal() {
-        // Obtener monto_total de certificados (sin duplicar por items)
+        // Obtener total_pendiente de certificados
         $stmt = $this->db->prepare("
-            SELECT COALESCE(SUM(monto_total), 0) as total_monto
+            SELECT COALESCE(SUM(total_pendiente), 0) as total_pendiente
             FROM certificados
         ");
         $stmt->execute();
         $row = $stmt->fetch();
-        $total_monto = $row['total_monto'] ?? 0;
+        $total_pendiente = $row['total_pendiente'] ?? 0;
         
         // Obtener total liquidado de detalles
         $stmt = $this->db->prepare("
@@ -701,24 +702,25 @@ class Certificate {
         $total_liquidado = $row['total_liquidado'] ?? 0;
         
         return [
-            'total_monto' => $total_monto,
+            'total_monto' => $total_pendiente,  // Ahora es pendiente, no monto_total
             'total_liquidado' => $total_liquidado
         ];
     }
 
     /**
-     * Obtener totales de monto y liquidado por operador
+     * Obtener totales de pendiente y liquidado por operador
+     * NOTA: "total_monto" ahora es la suma de total_pendiente, no monto_total
      */
     public function getTotalsByOperador($usuario_nombre) {
-        // Obtener monto_total de certificados por operador (sin duplicar por items)
+        // Obtener total_pendiente de certificados por operador
         $stmt = $this->db->prepare("
-            SELECT COALESCE(SUM(monto_total), 0) as total_monto
+            SELECT COALESCE(SUM(total_pendiente), 0) as total_pendiente
             FROM certificados
             WHERE usuario_creacion = ?
         ");
         $stmt->execute([$usuario_nombre]);
         $row = $stmt->fetch();
-        $total_monto = $row['total_monto'] ?? 0;
+        $total_pendiente = $row['total_pendiente'] ?? 0;
         
         // Obtener total liquidado de detalles del operador
         $stmt = $this->db->prepare("
@@ -732,7 +734,7 @@ class Certificate {
         $total_liquidado = $row['total_liquidado'] ?? 0;
         
         return [
-            'total_monto' => $total_monto,
+            'total_monto' => $total_pendiente,  // Ahora es pendiente, no monto_total
             'total_liquidado' => $total_liquidado
         ];
     }

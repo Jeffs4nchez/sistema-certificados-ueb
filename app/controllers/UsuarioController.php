@@ -261,4 +261,69 @@ class UsuarioController {
         $certificados = $this->usuario->obtenerCertificados($id);
         include __DIR__ . '/../views/usuarios/view.php';
     }
+
+    /**
+     * Resetear contraseña de un usuario
+     * Genera una contraseña temporal que el usuario debe cambiar al primer login
+     */
+    public function resetearContraseña() {
+        // Solo admin puede resetear contraseñas
+        if (!PermisosHelper::puedeGestionarUsuarios()) {
+            PermisosHelper::denegarAcceso('Solo administradores pueden resetear contraseñas.');
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $id = $_POST['id'] ?? null;
+                if (!$id) {
+                    $_SESSION['error'] = 'ID de usuario no especificado';
+                    header('Location: ?action=usuario&method=listar');
+                    return;
+                }
+
+                // Obtener usuario
+                $usuario = $this->usuario->obtenerPorId($id);
+                if (!$usuario) {
+                    $_SESSION['error'] = 'Usuario no encontrado';
+                    header('Location: ?action=usuario&method=listar');
+                    return;
+                }
+
+                // Generar contraseña temporal de 8 caracteres
+                $contraseña_temporal = $this->generarContraseñaTemporal();
+
+                // Actualizar contraseña en la BD
+                if ($this->usuario->cambiarContraseña($id, $contraseña_temporal)) {
+                    $_SESSION['success'] = "Contraseña reseteada exitosamente. Nueva contraseña temporal: <strong>{$contraseña_temporal}</strong>. Comparte esta contraseña de manera segura con el usuario.";
+                    if (ob_get_level() > 0) ob_end_clean();
+                    header('Location: ?action=usuario&method=listar');
+                } else {
+                    $_SESSION['error'] = 'Error al resetear la contraseña';
+                    if (ob_get_level() > 0) ob_end_clean();
+                    header('Location: ?action=usuario&method=listar');
+                }
+            } catch (Exception $e) {
+                $_SESSION['error'] = "Error: " . $e->getMessage();
+                if (ob_get_level() > 0) ob_end_clean();
+                header('Location: ?action=usuario&method=listar');
+            }
+        }
+    }
+
+    /**
+     * Generar contraseña temporal aleatoria
+     * @return string Contraseña temporal de 8 caracteres
+     */
+    private function generarContraseñaTemporal() {
+        // Caracteres permitidos
+        $caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+        $contraseña = '';
+        
+        // Generar 8 caracteres aleatorios
+        for ($i = 0; $i < 8; $i++) {
+            $contraseña .= $caracteres[rand(0, strlen($caracteres) - 1)];
+        }
+        
+        return $contraseña;
+    }
 }

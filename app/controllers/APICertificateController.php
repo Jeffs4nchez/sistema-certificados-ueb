@@ -399,5 +399,79 @@ class APICertificateController {
             }
         }
     }
+
+    /**
+     * Obtener certificado completo con sus items (para modal de edición)
+     */
+    public function getCertificateForEditAction() {
+        $certificate_id = $_GET['id'] ?? null;
+        
+        error_log('=== GET CERTIFICATE FOR EDIT ===');
+        error_log('Certificate ID: ' . $certificate_id);
+        
+        if (!$certificate_id) {
+            error_log('❌ ID no proporcionado');
+            $this->jsonResponse(false, null, 'ID de certificado requerido');
+        }
+        
+        try {
+            require_once __DIR__ . '/../models/Certificate.php';
+            $certificateModel = new Certificate();
+            
+            // Obtener certificado maestro
+            $certificate = $certificateModel->getById($certificate_id);
+            error_log('Certificado obtenido: ' . json_encode($certificate));
+            
+            if (!$certificate) {
+                error_log('❌ Certificado no encontrado: ' . $certificate_id);
+                $this->jsonResponse(false, null, 'Certificado no encontrado');
+            }
+            
+            // Obtener items del certificado
+            $items = $certificateModel->getCertificateDetails($certificate_id);
+            error_log('Items obtenidos: ' . count($items) . ' items');
+            
+            // Convertir items al formato esperado por el formulario
+            $itemsForForm = [];
+            if (is_array($items)) {
+                foreach ($items as $item) {
+                    $itemsForForm[] = [
+                        'id' => $item['id'],
+                        'item_id' => $item['item_codigo'],
+                        'programa_id' => 0,
+                        'subprograma_id' => 0,
+                        'proyecto_id' => 0,
+                        'actividad_id' => 0,
+                        'programa_codigo' => $item['programa_codigo'],
+                        'subprograma_codigo' => $item['subprograma_codigo'],
+                        'proyecto_codigo' => $item['proyecto_codigo'],
+                        'actividad_codigo' => $item['actividad_codigo'],
+                        'item_codigo' => $item['item_codigo'],
+                        'ubicacion_id' => 0,
+                        'ubicacion_codigo' => $item['ubicacion_codigo'],
+                        'fuente_id' => 0,
+                        'fuente_codigo' => $item['fuente_codigo'],
+                        'organismo_id' => $item['organismo_id'] ?? 0,
+                        'organismo_codigo' => $item['organismo_codigo'],
+                        'naturaleza_id' => $item['naturaleza_id'] ?? 0,
+                        'naturaleza_codigo' => $item['naturaleza_codigo'],
+                        'item_descripcion' => $item['descripcion_item'],
+                        'monto' => floatval($item['monto']),
+                        'certificado_id' => $certificate_id
+                    ];
+                }
+            }
+            
+            error_log('✓ Respondiendo con éxito');
+            $this->jsonResponse(true, [
+                'certificate' => $certificate,
+                'items' => $itemsForForm
+            ]);
+        } catch (Exception $e) {
+            error_log('❌ Exception: ' . $e->getMessage());
+            error_log('Stack: ' . $e->getTraceAsString());
+            $this->jsonResponse(false, null, 'Error: ' . $e->getMessage());
+        }
+    }
 }
 ?>

@@ -77,10 +77,10 @@
                                             <i class="fas fa-file-invoice-dollar"></i>
                                         </button>
                                         <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
-                                        <a href="index.php?action=certificate-edit&id=<?php echo $cert['id']; ?>" 
-                                           class="btn btn-sm btn-outline-secondary" title="Editar" style="display: inline-block; margin: 2px;">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" title="Editar"
+                                                onclick="openEditModal(<?php echo $cert['id']; ?>)" style="display: inline-block; margin: 2px;">
                                             <i class="fas fa-edit"></i>
-                                        </a>
+                                        </button>
                                         <form method="POST" action="index.php?action=certificate-delete&id=<?php echo $cert['id']; ?>" 
                                               style="display: inline-block; margin: 2px;" 
                                               onsubmit="return confirm('¿Estás seguro de eliminar este certificado?');">
@@ -316,7 +316,9 @@ async function abrirModalRegistroLiquidacion(certificateId) {
                             <input type="text" class="form-control form-control-sm memorando-input" 
                                    value=""
                                    placeholder="Ej: Comprobante #123"
-                                   data-detalle-id="${item.id}" maxlength="255">
+                                   data-detalle-id="${item.id}" maxlength="255"
+                                   oninput="validarMemorandoObligatorio(this)">
+                            <small class="text-danger d-none validacion-error-memorando" data-detalle-id="${item.id}">Obligatorio si hay liquidación</small>
                         </td>
                     </tr>
                 `;
@@ -402,11 +404,26 @@ document.getElementById('btnGuardarLiquidaciones').addEventListener('click', asy
         const memorandoInputs = document.querySelectorAll('.memorando-input');
         const liquidaciones = [];
         let hayErrores = false;
+        let erroresValidacion = [];
         
         liquidacionInputs.forEach((input, index) => {
             const memorandoInput = memorandoInputs[index];
             const cantidad = parseFloat(input.value) || 0;
             const cantidadPendiente = parseFloat(input.dataset.cantidadPendiente) || 0;
+            
+            // Si hay liquidación, validar que tenga memorando
+            if (cantidad > 0) {
+                const memorando = memorandoInput.value.trim();
+                if (!memorando) {
+                    memorandoInput.classList.add('is-invalid');
+                    const detalleId = input.dataset.detalleId;
+                    erroresValidacion.push(`Item ${detalleId}: El Memorando/Comprobante es obligatorio cuando hay liquidación`);
+                    hayErrores = true;
+                    return;
+                } else {
+                    memorandoInput.classList.remove('is-invalid');
+                }
+            }
             
             // Validar que no exceda cantidad pendiente
             if (cantidad > cantidadPendiente) {
@@ -423,7 +440,7 @@ document.getElementById('btnGuardarLiquidaciones').addEventListener('click', asy
             const item = {
                 detalle_id: input.dataset.detalleId,
                 cantidad_liquidacion: cantidad,
-                memorando: memorandoInput.value || ''
+                memorando: memorandoInput.value.trim()
             };
             liquidaciones.push(item);
         });
@@ -432,7 +449,11 @@ document.getElementById('btnGuardarLiquidaciones').addEventListener('click', asy
         if (hayErrores) {
             btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
             btn.disabled = false;
-            alert('⚠️ Error: Hay liquidaciones que exceden el saldo pendiente. Revisa los montos en rojo.');
+            if (erroresValidacion.length > 0) {
+                alert('❌ Por favor completa los siguientes campos:\n\n' + erroresValidacion.join('\n'));
+            } else {
+                alert('⚠️ Error: Hay liquidaciones que exceden el saldo pendiente. Revisa los montos en rojo.');
+            }
             return;
         }
         
@@ -482,6 +503,8 @@ function validarLiquidacion(input) {
     const cantidad = parseFloat(input.value) || 0;
     const cantidadPendiente = parseFloat(input.dataset.cantidadPendiente) || 0;
     const errorElement = document.querySelector(`.validacion-error[data-detalle-id="${input.dataset.detalleId}"]`);
+    const row = input.closest('tr');
+    const memorandoInput = row.querySelector('.memorando-input');
     
     if (cantidad > cantidadPendiente) {
         input.classList.add('is-invalid');
@@ -489,11 +512,32 @@ function validarLiquidacion(input) {
             errorElement.classList.remove('d-none');
             errorElement.textContent = `Máximo: $ ${cantidadPendiente.toFixed(2)}`;
         }
+    } else if (cantidad > 0) {
+        // Si hay liquidación, validar que haya memorando
+        input.classList.remove('is-invalid');
+        if (errorElement) {
+            errorElement.classList.add('d-none');
+        }
+        validarMemorandoObligatorio(memorandoInput);
     } else {
         input.classList.remove('is-invalid');
         if (errorElement) {
             errorElement.classList.add('d-none');
         }
+        memorandoInput.classList.remove('is-invalid');
+    }
+}
+
+// Validar que el memorando sea obligatorio cuando hay liquidación
+function validarMemorandoObligatorio(memorandoInput) {
+    const row = memorandoInput.closest('tr');
+    const liquidacionInput = row.querySelector('.liquidacion-input');
+    const cantidad = parseFloat(liquidacionInput.value) || 0;
+    
+    if (cantidad > 0 && !memorandoInput.value.trim()) {
+        memorandoInput.classList.add('is-invalid');
+    } else {
+        memorandoInput.classList.remove('is-invalid');
     }
 }
 
@@ -502,6 +546,8 @@ function mostrarAlerta(input) {
     const cantidad = parseFloat(input.value) || 0;
     const cantidadPendiente = parseFloat(input.dataset.cantidadPendiente) || 0;
     const errorElement = document.querySelector(`.validacion-error[data-detalle-id="${input.dataset.detalleId}"]`);
+    const row = input.closest('tr');
+    const memorandoInput = row.querySelector('.memorando-input');
     
     if (cantidad > cantidadPendiente) {
         input.classList.add('is-invalid');
@@ -509,11 +555,18 @@ function mostrarAlerta(input) {
             errorElement.classList.remove('d-none');
             errorElement.textContent = `⚠️ Máximo: $ ${cantidadPendiente.toFixed(2)}`;
         }
+    } else if (cantidad > 0) {
+        input.classList.remove('is-invalid');
+        if (errorElement) {
+            errorElement.classList.add('d-none');
+        }
+        validarMemorandoObligatorio(memorandoInput);
     } else {
         input.classList.remove('is-invalid');
         if (errorElement) {
             errorElement.classList.add('d-none');
         }
+        memorandoInput.classList.remove('is-invalid');
     }
 }
 
@@ -538,5 +591,291 @@ function updatePendiente(inputElement) {
         pendienteCell.classList.add('text-warning');
     }
 }
+
+// Modal para editar certificado
+function openEditModal(certificateId) {
+    console.log('🔄 Abriendo modal para certificado ID:', certificateId);
+    
+    const url = 'index.php?action=api-certificate&action-api=get-certificate-for-edit&id=' + certificateId;
+    console.log('📡 Llamando a:', url);
+    
+    fetch(url)
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers.get('content-type'));
+            return response.text();
+        })
+        .then(text => {
+            console.log('📨 Raw response:', text);
+            
+            try {
+                const data = JSON.parse(text);
+                console.log('✓ JSON parseado:', data);
+                
+                if (data.success && data.data) {
+                    const cert = data.data.certificate;
+                    const items = data.data.items;
+                    
+                    console.log('📋 Certificado:', cert);
+                    console.log('📦 Items:', items);
+                    
+                    // Llenar el formulario con los datos del certificado
+                    document.getElementById('editCertId').value = cert.id;
+                    document.getElementById('editNumeroCertificado').value = cert.numero_certificado;
+                    document.getElementById('editFechaElaboracion').value = cert.fecha_elaboracion;
+                    document.getElementById('editInstitucion').value = cert.institucion || '';
+                    document.getElementById('editSeccionMemorandum').value = cert.seccion_memorando || '';
+                    document.getElementById('editDescripcionGeneral').value = cert.descripcion || '';
+                    document.getElementById('editUnidEjecutora').value = cert.unid_ejecutora || '';
+                    document.getElementById('editUnidDesc').value = cert.unid_desc || '';
+                    document.getElementById('editClaseRegistro').value = cert.clase_registro || '';
+                    document.getElementById('editClaseGasto').value = cert.clase_gasto || '';
+                    document.getElementById('editTipoDocRespaldo').value = cert.tipo_doc_respaldo || '';
+                    document.getElementById('editClaseDocRespaldo').value = cert.clase_doc_respaldo || '';
+                    
+                    // Cargar los items en la tabla
+                    loadEditModalItems(items || []);
+                    
+                    // Mostrar el modal
+                    const editModal = new bootstrap.Modal(document.getElementById('editCertificateModal'));
+                    editModal.show();
+                    
+                    console.log('✓ Modal abierto correctamente');
+                } else {
+                    alert('❌ Error: ' + (data.message || 'Error desconocido'));
+                    console.error('API error:', data);
+                }
+            } catch (e) {
+                console.error('❌ Error parsing JSON:', e);
+                console.error('Response was:', text.substring(0, 500));
+                alert('❌ Error al procesar la respuesta:\n' + text.substring(0, 200));
+            }
+        })
+        .catch(error => {
+            console.error('❌ Fetch error:', error);
+            alert('❌ Error al cargar los datos del certificado: ' + error.message);
+        });
+}
+
+function loadEditModalItems(items) {
+    const tbody = document.getElementById('editItemsBody');
+    
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr class="text-center text-muted"><td colspan="11">No hay items agregados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = items.map((item, index) => `
+        <tr>
+            <td><small>${item.programa_codigo}</small></td>
+            <td><small>${item.subprograma_codigo}</small></td>
+            <td><small>${item.proyecto_codigo}</small></td>
+            <td><small>${item.actividad_codigo}</small></td>
+            <td><small>${item.item_codigo}</small></td>
+            <td><small>${item.ubicacion_codigo}</small></td>
+            <td><small>${item.fuente_codigo}</small></td>
+            <td><small>${item.organismo_codigo}</small></td>
+            <td><small>${item.naturaleza_codigo}</small></td>
+            <td><small>${item.item_descripcion}</small></td>
+            <td class="text-end">$ ${item.monto.toFixed(2)}</td>
+        </tr>
+    `).join('');
+    
+    // Actualizar total
+    updateEditTotal(items);
+}
+
+function removeEditItem(index) {
+    // Este es un placeholder - la lógica será más completa si es necesario
+    alert('Eliminar item desde el modal');
+}
+
+function updateEditTotal(items) {
+    const total = items.reduce((sum, item) => sum + item.monto, 0);
+    document.getElementById('editTotalMonto').textContent = total.toFixed(2);
+}
+
+function saveEditCertificate() {
+    const certId = document.getElementById('editCertId').value;
+    
+    if (!certId) {
+        alert('Error: ID del certificado no válido');
+        return;
+    }
+    
+    const formData = new FormData(document.getElementById('editCertificateForm'));
+    formData.append('id', certId);
+    
+    // Debug: mostrar datos que se envían
+    console.log('=== SALVANDO CERTIFICADO ===');
+    console.log('ID:', certId);
+    console.log('Datos a enviar:', Object.fromEntries(formData));
+    
+    fetch('index.php?action=certificate-update', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', {
+            'content-type': response.headers.get('content-type')
+        });
+        
+        // Obtener el texto primero
+        return response.text().then(text => {
+            console.log('Raw response:', text);
+            return { status: response.status, text: text };
+        });
+    })
+    .then(({ status, text }) => {
+        try {
+            const data = JSON.parse(text);
+            console.log('Parsed JSON:', data);
+            
+            if (data.success) {
+                alert('✓ Certificado actualizado correctamente');
+                location.reload();
+            } else {
+                alert('❌ Error: ' + (data.message || 'Error desconocido'));
+            }
+        } catch (e) {
+            console.error('Error parsing JSON:', e);
+            console.error('Response was:', text);
+            console.error('Status code:', status);
+            
+            // Mostrar los primeros 200 caracteres de la respuesta
+            const preview = text.substring(0, 200);
+            alert('❌ Error al procesar la respuesta:\n\n' + preview + '\n\nRevisa la consola para más detalles');
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('❌ Error de red: ' + error.message);
+    });
+}
 </script>
 
+<!-- MODAL DE EDICIÓN -->
+<div class="modal fade" id="editCertificateModal" tabindex="-1" aria-labelledby="editCertificateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #0B283F !important; color: white !important;">
+                <h5 class="modal-title" id="editCertificateModalLabel" style="color: white !important;">
+                    <i class="fas fa-edit"></i> Editar Certificado
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCertificateForm">
+                    <input type="hidden" id="editCertId">
+                    
+                    <!-- Datos Básicos -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="editNumeroCertificado" class="form-label small">Número de Certificado</label>
+                            <input type="text" class="form-control form-control-sm" id="editNumeroCertificado" name="numero_certificado" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editFechaElaboracion" class="form-label small">Fecha de Elaboración</label>
+                            <input type="text" class="form-control form-control-sm" id="editFechaElaboracion" name="fecha_elaboracion" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="editInstitucion" class="form-label small">Institución</label>
+                            <input type="text" class="form-control form-control-sm" id="editInstitucion" name="institucion">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editSeccionMemorandum" class="form-label small">Sección / Memorando</label>
+                            <input type="text" class="form-control form-control-sm" id="editSeccionMemorandum" name="seccion_memorando">
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-12">
+                            <label for="editDescripcionGeneral" class="form-label small">Descripción General</label>
+                            <textarea class="form-control form-control-sm" id="editDescripcionGeneral" name="descripcion_general" rows="2"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="editUnidEjecutora" class="form-label small">Unidad Ejecutora</label>
+                            <input type="text" class="form-control form-control-sm" id="editUnidEjecutora" name="unid_ejecutora">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editUnidDesc" class="form-label small">Descripción Unidad Ejecutora</label>
+                            <input type="text" class="form-control form-control-sm" id="editUnidDesc" name="unid_desc">
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="editClaseRegistro" class="form-label small">Clase de Registro</label>
+                            <input type="text" class="form-control form-control-sm" id="editClaseRegistro" name="clase_registro">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editClaseGasto" class="form-label small">Clase de Gasto</label>
+                            <input type="text" class="form-control form-control-sm" id="editClaseGasto" name="clase_gasto">
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="editTipoDocRespaldo" class="form-label small">Tipo de Documento Respaldo</label>
+                            <input type="text" class="form-control form-control-sm" id="editTipoDocRespaldo" name="tipo_doc_respaldo">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editClaseDocRespaldo" class="form-label small">Clase de Documento Respaldo</label>
+                            <input type="text" class="form-control form-control-sm" id="editClaseDocRespaldo" name="clase_doc_respaldo">
+                        </div>
+                    </div>
+                    
+                    <!-- Items -->
+                    <div class="card mt-3">
+                        <div class="card-header" style="background-color: #0B283F !important; color: white !important;">
+                            <h6 class="mb-0" style="color: white !important;">Items del Certificado</h6>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead style="background-color: #f8f9fa;">
+                                    <tr>
+                                        <th>PG</th>
+                                        <th>SP</th>
+                                        <th>PY</th>
+                                        <th>ACT</th>
+                                        <th>ITEM</th>
+                                        <th>UBG</th>
+                                        <th>FTE</th>
+                                        <th>ORG</th>
+                                        <th>N.Prest</th>
+                                        <th>Descripción</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="editItemsBody">
+                                    <tr class="text-center text-muted">
+                                        <td colspan="11">Cargando...</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot style="background-color: #f8f9fa; font-weight: bold;">
+                                    <tr>
+                                        <td colspan="10" class="text-end">TOTAL:</td>
+                                        <td>$ <span id="editTotalMonto">0.00</span></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveEditCertificate()">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
