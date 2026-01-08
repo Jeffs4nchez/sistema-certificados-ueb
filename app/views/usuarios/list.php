@@ -120,7 +120,7 @@
                                         title="Resetear contraseña" style="display: inline-block; margin: 2px;">
                                     <i class="bi bi-key"></i>
                                 </button>
-                                <?php if ($usuario['estado'] === 'activo'): ?>
+                                <?php if ($usuario['estado'] === 'activo' && (!isset($usuario['es_root']) || $usuario['es_root'] !== 1)): ?>
                                     <a href="?action=usuario&method=eliminar&id=<?php echo $usuario['id']; ?>" 
                                        class="btn btn-sm btn-danger" 
                                        onclick="return confirm('¿Desactivar este usuario?');"

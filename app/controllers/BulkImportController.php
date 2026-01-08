@@ -133,6 +133,10 @@ class BulkImportController {
                     ($data['cod_ubicacion'] ?? '') . ' ' .
                     ($data['cod_item'] ?? '')
                 );
+                
+                // Agregar el año de la sesión a los datos
+                $data['year'] = $_SESSION['year'] ?? date('Y');
+                
                 if (!empty($data['cod_programa'])) {
                     // Verificar si existe
                     $existingRecord = $this->parameterModel->getByCodigoCompleto($data['codigo_completo']);

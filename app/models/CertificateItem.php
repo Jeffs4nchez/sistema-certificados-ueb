@@ -183,16 +183,21 @@ class CertificateItem {
 
     /**
      * Obtener el monto codificado (col3) de presupuesto_items
-     * basado en los códigos del item
+     * basado en los códigos del item y el año
      */
-    public function getMontoCoificado($cod_programa, $cod_subprograma, $cod_proyecto, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item) {
-        // Buscar en presupuesto_items basado en los códigos
+    public function getMontoCoificado($cod_programa, $cod_subprograma, $cod_proyecto, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item, $year = null) {
+        // Si no se proporciona year, usar el actual
+        if ($year === null) {
+            $year = date('Y');
+        }
+        
+        // Buscar en presupuesto_items basado en los códigos Y EL AÑO
         $sql = "SELECT col3 as monto_codificado FROM presupuesto_items 
-                WHERE codigog1 = ? AND codigog2 = ? AND codigog3 = ? AND codigog4 = ? AND codigog5 = ? 
+                WHERE codigog1 = ? AND codigog2 = ? AND codigog3 = ? AND codigog4 = ? AND codigog5 = ? AND year = ?
                 LIMIT 1";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$cod_programa, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item]);
+        $stmt->execute([$cod_programa, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item, $year]);
         $row = $stmt->fetch();
         
         return $row ? (float)$row['monto_codificado'] : 0;

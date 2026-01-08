@@ -8,6 +8,57 @@ if (!class_exists('Database')) {
 }
 
 class Certificate {
+        /**
+         * Contar certificados por año
+         */
+        public function countByYear($year) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE year = ?");
+            $stmt->execute([$year]);
+            $row = $stmt->fetch();
+            return $row['total'] ?? 0;
+        }
+
+        /**
+         * Contar certificados aprobados por año
+         */
+        public function countByStatusAndYear($status, $year) {
+            if ($status === 'APROBADO') {
+                $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE year = ? AND monto_total > 0");
+            } else {
+                $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE year = ? AND (monto_total = 0 OR monto_total IS NULL)");
+            }
+            $stmt->execute([$year]);
+            $row = $stmt->fetch();
+            return $row['total'] ?? 0;
+        }
+
+        /**
+         * Obtener totales globales de pendiente y liquidado por año
+         */
+        public function getTotalsGlobalByYear($year) {
+            $stmt = $this->db->prepare("
+                SELECT COALESCE(SUM(total_pendiente), 0) as total_pendiente
+                FROM certificados WHERE year = ?
+            ");
+            $stmt->execute([$year]);
+            $row = $stmt->fetch();
+            $total_pendiente = $row['total_pendiente'] ?? 0;
+
+            $stmt = $this->db->prepare("
+                SELECT COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado
+                FROM detalle_certificados dc
+                INNER JOIN certificados c ON dc.certificado_id = c.id
+                WHERE c.year = ?
+            ");
+            $stmt->execute([$year]);
+            $row = $stmt->fetch();
+            $total_liquidado = $row['total_liquidado'] ?? 0;
+
+            return [
+                'total_monto' => $total_pendiente,
+                'total_liquidado' => $total_liquidado
+            ];
+        }
     private $db;
     
     public function __construct() {
@@ -23,11 +74,29 @@ class Certificate {
     }
 
     /**
+     * Obtener todos los certificados por AÑO
+     */
+    public function getAllByYear($year) {
+        $stmt = $this->db->prepare("SELECT * FROM certificados WHERE year = ? ORDER BY id DESC");
+        $stmt->execute([$year]);
+        return $stmt ? $stmt->fetchAll() : array();
+    }
+
+    /**
      * Obtener certificados por usuario (para operadores) - totales en BD
      */
     public function getByUsuario($usuario_id) {
         $stmt = $this->db->prepare("SELECT * FROM certificados WHERE usuario_id = ? ORDER BY id DESC");
         $stmt->execute([$usuario_id]);
+        return $stmt ? $stmt->fetchAll() : array();
+    }
+
+    /**
+     * Obtener certificados por usuario Y AÑO
+     */
+    public function getByUsuarioAndYear($usuario_id, $year) {
+        $stmt = $this->db->prepare("SELECT * FROM certificados WHERE usuario_id = ? AND year = ? ORDER BY id DESC");
+        $stmt->execute([$usuario_id, $year]);
         return $stmt ? $stmt->fetchAll() : array();
     }
 
@@ -49,9 +118,12 @@ class Certificate {
                 numero_certificado, institucion, seccion_memorando, descripcion, 
                 fecha_elaboracion, monto_total, unid_ejecutora, unid_desc, 
                 clase_registro, clase_gasto, tipo_doc_respaldo, clase_doc_respaldo,
-                usuario_id, usuario_creacion
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                usuario_id, usuario_creacion, year
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
+        
+        // Obtener el año de trabajo actual de la sesión
+        $year = $data['year'] ?? (isset($_SESSION['year']) ? intval($_SESSION['year']) : date('Y'));
         
         $stmt->execute([
             $data['numero_certificado'],
@@ -67,7 +139,8 @@ class Certificate {
             $data['tipo_doc_respaldo'] ?? '',
             $data['clase_doc_respaldo'] ?? '',
             $data['usuario_id'] ?? null,
-            $data['usuario_creacion'] ?? ''
+            $data['usuario_creacion'] ?? '',
+            $year
         ]);
         
         return $this->db->lastInsertId();
@@ -76,23 +149,27 @@ class Certificate {
     /**
      * Actualizar presupuesto_items: sumar a col4 y restar de saldo_disponible
      */
-    private function updatePresupuestoAddCertificado($codigo_completo, $monto) {
+    private function updatePresupuestoAddCertificado($codigo_completo, $monto, $year = null) {
         if (!$codigo_completo || $monto <= 0) {
             return true;
         }
         
+        if ($year === null) {
+            $year = $_SESSION['year'] ?? date('Y');
+        }
+        
         try {
-            // Obtener valores actuales
+            // Obtener valores actuales - FILTRAR POR AÑO
             $stmt = $this->db->prepare("
                 SELECT col3, col4, saldo_disponible 
                 FROM presupuesto_items 
-                WHERE codigo_completo = ?
+                WHERE codigo_completo = ? AND year = ?
             ");
-            $stmt->execute([$codigo_completo]);
+            $stmt->execute([$codigo_completo, $year]);
             $presupuesto = $stmt->fetch();
             
             if (!$presupuesto) {
-                error_log("⚠️ Presupuesto no encontrado: $codigo_completo");
+                error_log("⚠️ Presupuesto no encontrado: $codigo_completo (año: $year)");
                 return true;
             }
             
@@ -100,17 +177,17 @@ class Certificate {
             $col4_nuevo = (float)($presupuesto['col4'] ?? 0) + $monto;
             $saldo_nuevo = $col3 - $col4_nuevo;
             
-            // Actualizar
+            // Actualizar - CON FILTRO DE AÑO
             $updateStmt = $this->db->prepare("
                 UPDATE presupuesto_items 
                 SET col4 = ?,
                     saldo_disponible = ?,
                     fecha_actualizacion = NOW()
-                WHERE codigo_completo = ?
+                WHERE codigo_completo = ? AND year = ?
             ");
             
-            $updateStmt->execute([$col4_nuevo, $saldo_nuevo, $codigo_completo]);
-            error_log("✅ Presupuesto AGREGAR: codigo=$codigo_completo, col4=$col4_nuevo, saldo=$saldo_nuevo");
+            $updateStmt->execute([$col4_nuevo, $saldo_nuevo, $codigo_completo, $year]);
+            error_log("✅ Presupuesto AGREGAR: codigo=$codigo_completo (año: $year), col4=$col4_nuevo, saldo=$saldo_nuevo");
             return true;
         } catch (Exception $e) {
             error_log("❌ Error actualizando presupuesto: " . $e->getMessage());
@@ -121,23 +198,27 @@ class Certificate {
     /**
      * Actualizar presupuesto_items: restar de col4 y sumar a saldo_disponible
      */
-    private function updatePresupuestoRemoveCertificado($codigo_completo, $monto) {
+    private function updatePresupuestoRemoveCertificado($codigo_completo, $monto, $year = null) {
         if (!$codigo_completo || $monto <= 0) {
             return true;
         }
         
+        if ($year === null) {
+            $year = $_SESSION['year'] ?? date('Y');
+        }
+        
         try {
-            // Obtener valores actuales
+            // Obtener valores actuales - FILTRAR POR AÑO
             $stmt = $this->db->prepare("
                 SELECT col3, col4, saldo_disponible 
                 FROM presupuesto_items 
-                WHERE codigo_completo = ?
+                WHERE codigo_completo = ? AND year = ?
             ");
-            $stmt->execute([$codigo_completo]);
+            $stmt->execute([$codigo_completo, $year]);
             $presupuesto = $stmt->fetch();
             
             if (!$presupuesto) {
-                error_log("⚠️ Presupuesto no encontrado: $codigo_completo");
+                error_log("⚠️ Presupuesto no encontrado: $codigo_completo (año: $year)");
                 return true;
             }
             
@@ -145,17 +226,17 @@ class Certificate {
             $col4_nuevo = max(0, (float)($presupuesto['col4'] ?? 0) - $monto);
             $saldo_nuevo = $col3 - $col4_nuevo;
             
-            // Actualizar
+            // Actualizar - CON FILTRO DE AÑO
             $updateStmt = $this->db->prepare("
                 UPDATE presupuesto_items 
                 SET col4 = ?,
                     saldo_disponible = ?,
                     fecha_actualizacion = NOW()
-                WHERE codigo_completo = ?
+                WHERE codigo_completo = ? AND year = ?
             ");
             
-            $updateStmt->execute([$col4_nuevo, $saldo_nuevo, $codigo_completo]);
-            error_log("✅ Presupuesto ELIMINAR: codigo=$codigo_completo, col4=$col4_nuevo, saldo=$saldo_nuevo");
+            $updateStmt->execute([$col4_nuevo, $saldo_nuevo, $codigo_completo, $year]);
+            error_log("✅ Presupuesto ELIMINAR: codigo=$codigo_completo (año: $year), col4=$col4_nuevo, saldo=$saldo_nuevo");
             return true;
         } catch (Exception $e) {
             error_log("❌ Error actualizando presupuesto: " . $e->getMessage());
@@ -207,7 +288,8 @@ class Certificate {
         $detailId = $this->db->lastInsertId();
         
         // Actualizar presupuesto_items: sumar monto a col4 y restar de saldo_disponible
-        $this->updatePresupuestoAddCertificado($codigoCompleto, $monto);
+        $year = $data['year'] ?? ($_SESSION['year'] ?? date('Y'));
+        $this->updatePresupuestoAddCertificado($codigoCompleto, $monto, $year);
         
         return $detailId;
     }
@@ -269,7 +351,12 @@ class Certificate {
      */
     public function update($id, $data) {
         // Obtener el detalle actual para comparar monto
-        $stmtGet = $this->db->prepare("SELECT monto, codigo_completo FROM detalle_certificados WHERE id = ?");
+        $stmtGet = $this->db->prepare("
+            SELECT dc.monto, dc.codigo_completo, c.year 
+            FROM detalle_certificados dc
+            INNER JOIN certificados c ON dc.certificado_id = c.id
+            WHERE dc.id = ?
+        ");
         $stmtGet->execute([$id]);
         $detalle_actual = $stmtGet->fetch();
         
@@ -279,6 +366,7 @@ class Certificate {
         
         $monto_anterior = (float)($detalle_actual['monto'] ?? 0);
         $codigo_completo = (string)($detalle_actual['codigo_completo'] ?? '');
+        $year = (int)($detalle_actual['year'] ?? date('Y'));
         $monto_nuevo = (float)($data['monto'] ?? 0);
         $diferencia = $monto_nuevo - $monto_anterior;
         
@@ -324,10 +412,10 @@ class Certificate {
         if ($diferencia != 0 && $resultado) {
             if ($diferencia > 0) {
                 // Monto aumentó: sumar la diferencia a col4
-                $this->updatePresupuestoAddCertificado($codigo_completo, $diferencia);
+                $this->updatePresupuestoAddCertificado($codigo_completo, $diferencia, $year);
             } else {
                 // Monto disminuyó: restar la diferencia de col4
-                $this->updatePresupuestoRemoveCertificado($codigo_completo, abs($diferencia));
+                $this->updatePresupuestoRemoveCertificado($codigo_completo, abs($diferencia), $year);
             }
         }
         
@@ -339,8 +427,13 @@ class Certificate {
      * Actualiza presupuesto_items: resta monto de col4
      */
     public function deleteDetail($id) {
-        // Obtener el detalle a eliminar
-        $stmtGet = $this->db->prepare("SELECT monto, codigo_completo, cantidad_pendiente FROM detalle_certificados WHERE id = ?");
+        // Obtener el detalle a eliminar CON EL AÑO DEL CERTIFICADO
+        $stmtGet = $this->db->prepare("
+            SELECT dc.monto, dc.codigo_completo, dc.cantidad_pendiente, c.year 
+            FROM detalle_certificados dc
+            INNER JOIN certificados c ON dc.certificado_id = c.id
+            WHERE dc.id = ?
+        ");
         $stmtGet->execute([$id]);
         $detalle = $stmtGet->fetch();
         
@@ -351,6 +444,7 @@ class Certificate {
         $monto = (float)($detalle['monto'] ?? 0);
         $codigo_completo = (string)($detalle['codigo_completo'] ?? '');
         $cantidad_pendiente = (float)($detalle['cantidad_pendiente'] ?? 0);
+        $year = (int)($detalle['year'] ?? date('Y'));
         
         // Eliminar el detalle
         $stmt = $this->db->prepare("DELETE FROM detalle_certificados WHERE id = ?");
@@ -359,7 +453,7 @@ class Certificate {
         // Si se eliminó correctamente, actualizar presupuesto_items
         // IMPORTANTE: Solo restar lo que estaba PENDIENTE, no el monto total
         if ($resultado) {
-            $this->updatePresupuestoRemoveCertificado($codigo_completo, $cantidad_pendiente);
+            $this->updatePresupuestoRemoveCertificado($codigo_completo, $cantidad_pendiente, $year);
         }
         
         return $resultado;
@@ -441,6 +535,12 @@ class Certificate {
             $codigo_completo = (string)$detalle['codigo_completo'];
             $cantidad_pendiente = (float)$detalle['cantidad_pendiente'];
             
+            // OBTENER EL AÑO DEL CERTIFICADO PARA FILTRAR PRESUPUESTO
+            $stmtYear = $this->db->prepare("SELECT year FROM certificados WHERE id = ?");
+            $stmtYear->execute([$certificado_id]);
+            $certData = $stmtYear->fetch();
+            $year = $certData ? (int)$certData['year'] : (int)$_SESSION['year'];
+            
             error_log("📌 Liquidación INICIO: id=$detalle_id, monto=$monto_original, codigo=$codigo_completo, cantidad_liq_input=$cantidad_liquidacion, pendiente=$cantidad_pendiente");
             
             // 2. VALIDAR CANTIDAD NO SEA NEGATIVA
@@ -516,21 +616,23 @@ class Certificate {
                 $stmtSumaTotal = $this->db->prepare("
                     SELECT COALESCE(SUM(cantidad_pendiente), 0) as suma_total_pendiente
                     FROM detalle_certificados
-                    WHERE codigo_completo = ?
+                    WHERE codigo_completo = ? AND certificado_id IN (
+                        SELECT id FROM certificados WHERE year = ?
+                    )
                 ");
-                $stmtSumaTotal->execute([$codigo_completo]);
+                $stmtSumaTotal->execute([$codigo_completo, $year]);
                 $resultado = $stmtSumaTotal->fetch();
                 $suma_total_pendiente = (float)($resultado['suma_total_pendiente'] ?? 0);
                 
-                error_log("✅ Suma total pendiente obtenida: $suma_total_pendiente para codigo=$codigo_completo");
+                error_log("✅ Suma total pendiente obtenida: $suma_total_pendiente para codigo=$codigo_completo, year=$year");
                 
-                // Obtener presupuesto actual
+                // Obtener presupuesto actual (FILTRADO POR YEAR)
                 $stmtPresupuesto = $this->db->prepare("
                     SELECT col3, col4, saldo_disponible
                     FROM presupuesto_items 
-                    WHERE codigo_completo = ?
+                    WHERE codigo_completo = ? AND year = ?
                 ");
-                $stmtPresupuesto->execute([$codigo_completo]);
+                $stmtPresupuesto->execute([$codigo_completo, $year]);
                 $presupuesto = $stmtPresupuesto->fetch();
                 
                 if ($presupuesto) {
@@ -550,13 +652,14 @@ class Certificate {
                         SET col4 = ?,
                             saldo_disponible = ?,
                             fecha_actualizacion = NOW()
-                        WHERE codigo_completo = ?
+                        WHERE codigo_completo = ? AND year = ?
                     ");
                     
                     $resultado = $updatePresupuesto->execute([
                         $col4_nuevo,
                         $saldo_nuevo,
-                        $codigo_completo
+                        $codigo_completo,
+                        $year
                     ]);
                     
                     if (!$resultado) {
@@ -657,9 +760,14 @@ class Certificate {
     /**
      * Contar certificados de un operador por nombre de usuario
      */
-    public function countByOperador($usuario_nombre) {
-        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ?");
-        $stmt->execute([$usuario_nombre]);
+    public function countByOperador($usuario_nombre, $year = null) {
+        if ($year) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND year = ?");
+            $stmt->execute([$usuario_nombre, $year]);
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ?");
+            $stmt->execute([$usuario_nombre]);
+        }
         $row = $stmt->fetch();
         return $row['total'] ?? 0;
     }
@@ -667,13 +775,24 @@ class Certificate {
     /**
      * Contar certificados de un operador por nombre de usuario y estado
      */
-    public function countByOperadorAndStatus($usuario_nombre, $status) {
+    public function countByOperadorAndStatus($usuario_nombre, $status, $year = null) {
         if ($status === 'APROBADO') {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND monto_total > 0");
+            if ($year) {
+                $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND monto_total > 0 AND year = ?");
+                $stmt->execute([$usuario_nombre, $year]);
+            } else {
+                $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND monto_total > 0");
+                $stmt->execute([$usuario_nombre]);
+            }
         } else {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND (monto_total = 0 OR monto_total IS NULL)");
+            if ($year) {
+                $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND (monto_total = 0 OR monto_total IS NULL) AND year = ?");
+                $stmt->execute([$usuario_nombre, $year]);
+            } else {
+                $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM certificados WHERE usuario_creacion = ? AND (monto_total = 0 OR monto_total IS NULL)");
+                $stmt->execute([$usuario_nombre]);
+            }
         }
-        $stmt->execute([$usuario_nombre]);
         $row = $stmt->fetch();
         return $row['total'] ?? 0;
     }
@@ -711,25 +830,44 @@ class Certificate {
      * Obtener totales de pendiente y liquidado por operador
      * NOTA: "total_monto" ahora es la suma de total_pendiente, no monto_total
      */
-    public function getTotalsByOperador($usuario_nombre) {
+    public function getTotalsByOperador($usuario_nombre, $year = null) {
         // Obtener total_pendiente de certificados por operador
-        $stmt = $this->db->prepare("
-            SELECT COALESCE(SUM(total_pendiente), 0) as total_pendiente
-            FROM certificados
-            WHERE usuario_creacion = ?
-        ");
-        $stmt->execute([$usuario_nombre]);
+        if ($year) {
+            $stmt = $this->db->prepare("
+                SELECT COALESCE(SUM(total_pendiente), 0) as total_pendiente
+                FROM certificados
+                WHERE usuario_creacion = ? AND year = ?
+            ");
+            $stmt->execute([$usuario_nombre, $year]);
+        } else {
+            $stmt = $this->db->prepare("
+                SELECT COALESCE(SUM(total_pendiente), 0) as total_pendiente
+                FROM certificados
+                WHERE usuario_creacion = ?
+            ");
+            $stmt->execute([$usuario_nombre]);
+        }
         $row = $stmt->fetch();
         $total_pendiente = $row['total_pendiente'] ?? 0;
         
         // Obtener total liquidado de detalles del operador
-        $stmt = $this->db->prepare("
-            SELECT COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado
-            FROM detalle_certificados dc
-            INNER JOIN certificados c ON dc.certificado_id = c.id
-            WHERE c.usuario_creacion = ?
-        ");
-        $stmt->execute([$usuario_nombre]);
+        if ($year) {
+            $stmt = $this->db->prepare("
+                SELECT COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado
+                FROM detalle_certificados dc
+                INNER JOIN certificados c ON dc.certificado_id = c.id
+                WHERE c.usuario_creacion = ? AND c.year = ?
+            ");
+            $stmt->execute([$usuario_nombre, $year]);
+        } else {
+            $stmt = $this->db->prepare("
+                SELECT COALESCE(SUM(dc.cantidad_liquidacion), 0) as total_liquidado
+                FROM detalle_certificados dc
+                INNER JOIN certificados c ON dc.certificado_id = c.id
+                WHERE c.usuario_creacion = ?
+            ");
+            $stmt->execute([$usuario_nombre]);
+        }
         $row = $stmt->fetch();
         $total_liquidado = $row['total_liquidado'] ?? 0;
         

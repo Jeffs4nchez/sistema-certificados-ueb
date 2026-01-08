@@ -14,6 +14,57 @@ if (!class_exists('Database')) {
     require_once DATABASE_CLASS;
 }
 
+// Crear usuario admin automáticamente si no hay usuarios (primera instalación)
+$adminMarkerFile = __DIR__ . '/.admin-created';
+if (!file_exists($adminMarkerFile)) {
+    try {
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->query("SELECT COUNT(*) as total FROM usuarios");
+        $result = $stmt->fetch();
+        
+        if ($result['total'] == 0) {
+            // Crear usuario admin automáticamente
+            $stmt = $db->prepare("INSERT INTO usuarios (nombre, apellidos, correo_institucional, cargo, tipo_usuario, contraseña, es_root) 
+                                VALUES (:nombre, :apellidos, :correo, :cargo, :tipo, :pass, 1)");
+            $stmt->execute([
+                ':nombre' => 'Admin',
+                ':apellidos' => 'Sistema',
+                ':correo' => 'admin@institucion.com',
+                ':cargo' => 'Administrador del Sistema',
+                ':tipo' => 'admin',
+                ':pass' => password_hash('admin123', PASSWORD_BCRYPT)
+            ]);
+            
+            touch($adminMarkerFile); // Marcar que ya se creó
+        }
+    } catch (Exception $e) {
+        // Si hay error, continuar sin fallar
+        error_log("Error al crear usuario admin: " . $e->getMessage());
+    }
+}
+
+// Ejecutar migraciones automáticas
+$migrationsFolder = __DIR__ . '/database/migrations';
+if (!is_dir($migrationsFolder)) {
+    @mkdir($migrationsFolder, 0755, true);
+}
+
+// Ejecutar migración para agregar columna es_root
+$esRootMigrationMarker = __DIR__ . '/.migration-es-root';
+if (!file_exists($esRootMigrationMarker)) {
+    $migrationFile = __DIR__ . '/database/migration_es_root.php';
+    if (file_exists($migrationFile)) {
+        try {
+            ob_start();
+            require_once $migrationFile;
+            ob_end_clean();
+            touch($esRootMigrationMarker);
+        } catch (Exception $e) {
+            error_log("Error en migración es_root: " . $e->getMessage());
+        }
+    }
+}
+
 // Limpiar y reinstalar triggers si no están instalados
 $triggerMarkerFile = __DIR__ . '/.triggers-installed';
 if (!file_exists($triggerMarkerFile)) {

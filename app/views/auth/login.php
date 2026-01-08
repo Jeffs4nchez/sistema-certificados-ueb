@@ -71,7 +71,7 @@
         .login-header {
             background: linear-gradient(135deg, var(--azul-1) 0%, var(--azul-2) 100%);
             color: white;
-            padding: 50px 30px;
+            padding: 20px 30px;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -371,6 +371,25 @@
                         </div>
                     </div>
 
+                    <!-- Año de Trabajo -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-alt"></i> Año de Trabajo
+                        </label>
+                        <div class="icon-input">
+                            <i class="fas fa-calendar-alt"></i>
+                            <select class="form-control" name="año_trabajo" required>
+                                <option value="">-- Selecciona un año --</option>
+                                <?php 
+                                    $currentYear = date('Y');
+                                    for ($i = $currentYear; $i >= $currentYear - 2; $i--) {
+                                        echo "<option value=\"$i\">$i</option>";
+                                    }
+                                ?>
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Remember Me -->
                     <div class="remember-me">
                         <input type="checkbox" id="remember" name="remember">
@@ -382,29 +401,13 @@
                         <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
                     </button>
                 </form>
-
-                <!-- Credentials Info -->
-                <div class="credentials-info">
-                    <h6><i class="fas fa-info-circle"></i> Credenciales de Prueba</h6>
-                    <p>
-                        <strong>Administrador:</strong><br>
-                        📧 admin@institucion.com<br>
-                        🔐 admin123
-                    </p>
-                    <hr>
-                    <p>
-                        <strong>Operador:</strong><br>
-                        📧 encargado@institucion.com<br>
-                        🔐 encargado123
-                    </p>
-                </div>
             </div>
 
             <!-- FOOTER -->
             <div class="login-footer">
                 <p>
                     <strong>Sistema de Gestión de Certificados y Presupuesto</strong><br>
-                    © 2024 - Todos los derechos reservados
+                    © 2026 - Todos los derechos reservados
                 </p>
             </div>
         </div>

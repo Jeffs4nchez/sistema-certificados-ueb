@@ -12,7 +12,7 @@
                 </div>
                 <div class="col-md-6 text-end">
                     <p class="mb-0">
-                        <small class="text-muted">&copy; 2025 - Todos los derechos reservados</small>
+                        <small class="text-muted">&copy; 2026 - Todos los derechos reservados</small>
                     </p>
                 </div>
             </div>

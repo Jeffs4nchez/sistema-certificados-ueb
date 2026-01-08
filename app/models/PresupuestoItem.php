@@ -20,6 +20,15 @@ class PresupuestoItem {
     }
 
     /**
+     * Obtener items de presupuesto por AÑO
+     */
+    public function getByYear($year) {
+        $stmt = $this->db->prepare("SELECT * FROM presupuesto_items WHERE year = ? ORDER BY id ASC");
+        $stmt->execute([$year]);
+        return $stmt ? $stmt->fetchAll() : array();
+    }
+
+    /**
      * Obtener item por ID
      */
     public function getById($id) {
@@ -36,9 +45,12 @@ class PresupuestoItem {
             INSERT INTO presupuesto_items (
                 descripciong1, descripciong2, descripciong3, descripciong4, descripciong5,
                 col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col20,
-                codigog1, codigog2, codigog3, codigog4, codigog5, codigo_completo, saldo_disponible
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                codigog1, codigog2, codigog3, codigog4, codigog5, codigo_completo, saldo_disponible, year
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
+        
+        // Obtener año de sesión
+        $year = isset($_SESSION['year']) ? intval($_SESSION['year']) : date('Y');
         
         $stmt->execute([
             $data['descripciong1'],
@@ -63,7 +75,8 @@ class PresupuestoItem {
             $data['codigog4'],
             $data['codigog5'],
             $data['codigo_completo'],
-            $data['saldo_disponible']
+            $data['saldo_disponible'],
+            $year
         ]);
         
         return $this->db->lastInsertId();
@@ -165,6 +178,16 @@ class PresupuestoItem {
     }
 
     /**
+     * Contar items de presupuesto por AÑO
+     */
+    public function countByYear($year) {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM presupuesto_items WHERE year = ?");
+        $stmt->execute([$year]);
+        $row = $stmt->fetch();
+        return $row['total'];
+    }
+
+    /**
      * Búsqueda por código de programa
      */
     public function findByPrograma($codigog1) {
@@ -183,15 +206,18 @@ class PresupuestoItem {
     }
 
     /**
-     * Obtener item por código completo
+     * Obtener item por código completo Y AÑO
      */
     public function obtenerPorCodigoCompleto($codigo_completo) {
+        // Obtener año de sesión
+        $year = isset($_SESSION['year']) ? intval($_SESSION['year']) : date('Y');
+        
         $stmt = $this->db->prepare("
             SELECT * FROM presupuesto_items 
-            WHERE codigo_completo = ? 
+            WHERE codigo_completo = ? AND year = ?
             LIMIT 1
         ");
-        $stmt->execute([$codigo_completo]);
+        $stmt->execute([$codigo_completo, $year]);
         return $stmt->fetch();
     }
 
@@ -223,6 +249,27 @@ class PresupuestoItem {
         
         $result = $this->db->query($query);
         return $result->fetch();
+    }
+
+    /**
+     * Obtener resumen de montos por AÑO
+     */
+    public function getResumenByYear($year) {
+        $query = "SELECT 
+            SUM(col1) as total_asignado,
+            SUM(col3) as total_codificado,
+            SUM(col4) as total_certificado,
+            SUM(col5) as total_comprometido,
+            SUM(col6) as total_devengado,
+            SUM(col7) as total_liquidado,
+            SUM(saldo_disponible) as total_saldo_disponible,
+            COUNT(*) as total_items,
+            AVG(col20) as promedio_ejecucion
+        FROM presupuesto_items WHERE year = ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$year]);
+        return $stmt->fetch();
     }
 
     /**

@@ -196,7 +196,7 @@ class UsuarioController {
 
     /**
      * Eliminar usuario
-     * PROTECCIÓN: No permite eliminar el último administrador
+     * PROTECCIÓN: No permite eliminar el último administrador ni el usuario root
      */
     public function eliminar() {
         // Solo admin puede eliminar usuarios
@@ -216,6 +216,13 @@ class UsuarioController {
             $usuario_a_eliminar = $this->usuario->obtenerPorId($id);
             if (!$usuario_a_eliminar) {
                 $_SESSION['error'] = 'Usuario no encontrado';
+                header('Location: ?action=usuario&method=listar');
+                return;
+            }
+
+            // Protección: No permitir eliminar el usuario root (primer admin)
+            if (isset($usuario_a_eliminar['es_root']) && $usuario_a_eliminar['es_root'] === 1) {
+                $_SESSION['error'] = 'No se puede eliminar el usuario administrador principal del sistema';
                 header('Location: ?action=usuario&method=listar');
                 return;
             }

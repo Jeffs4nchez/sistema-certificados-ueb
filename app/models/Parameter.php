@@ -6,10 +6,18 @@
  */
 
 class Parameter {
+    private $db;
+    private $tipos_validos = ['PG', 'SP', 'PY', 'ACT', 'ITEM', 'UBG', 'FTE', 'ORG', 'N.PREST'];
+    
+    public function __construct() {
+        require_once __DIR__ . '/../Database.php';
+        $this->db = Database::getInstance()->getConnection();
+    }
+
     /**
-     * Obtener parámetros únicos por tipo (sin repetidos)
+     * Obtener parámetros únicos por tipo (SIN AISLAR POR AÑO - GLOBALES)
      */
-    public function getDistinctParametersByType($type) {
+    public function getDistinctParametersByTypeAndYear($type, $year) {
         $map = [
             'PG' => ['codigo' => 'cod_programa', 'descripcion' => 'desc_programa'],
             'SP' => ['codigo' => 'cod_subprograma', 'descripcion' => 'desc_subprograma'],
@@ -26,8 +34,14 @@ class Parameter {
         }
         $codigo = $map[$type]['codigo'];
         $descripcion = $map[$type]['descripcion'];
-        $sql = "SELECT DISTINCT $codigo AS codigo, $descripcion AS descripcion FROM estructura_presupuestaria WHERE $codigo IS NOT NULL AND TRIM($codigo) <> '' AND $descripcion IS NOT NULL AND TRIM($descripcion) <> '' ORDER BY $codigo ASC";
-        $stmt = $this->db->query($sql);
+        // SIN FILTRO DE AÑO - PARÁMETROS GLOBALES
+        $sql = "SELECT DISTINCT $codigo AS codigo, $descripcion AS descripcion 
+                FROM estructura_presupuestaria 
+                WHERE $codigo IS NOT NULL AND TRIM($codigo) <> '' 
+                AND $descripcion IS NOT NULL AND TRIM($descripcion) <> '' 
+                ORDER BY $codigo ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([]);
         $result = [];
         $id = 1;
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -39,10 +53,20 @@ class Parameter {
         }
         return $result;
     }
-        /**
-         * Contar el total de parámetros de un tipo específico en la tabla plana
-         */
-        public function countParametersByType($type) {
+    
+    /**
+     * Obtener parámetros únicos por tipo (sin repetidos)
+     */
+    public function getDistinctParametersByType($type) {
+        // Usa el año actual de sesión
+        $year = isset($_SESSION['year']) ? intval($_SESSION['year']) : date('Y');
+        return $this->getDistinctParametersByTypeAndYear($type, $year);
+    }
+
+    /**
+     * Contar el total de parámetros de un tipo específico (SIN AISLAR POR AÑO - GLOBALES)
+     */
+    public function countParametersByTypeAndYear($type, $year) {
             // Mapeo de tipo a columna
             $map = [
                 'PG' => 'cod_programa',
@@ -59,22 +83,26 @@ class Parameter {
                 return 0;
             }
             $col = $map[$type];
+            // SIN FILTRO DE AÑO - PARÁMETROS GLOBALES
             $sql = "SELECT COUNT(*) as total FROM estructura_presupuestaria WHERE $col IS NOT NULL AND TRIM($col) <> ''";
-            $stmt = $this->db->query($sql);
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             return $row ? (int)$row['total'] : 0;
         }
-    private $db;
-    private $tipos_validos = ['PG', 'SP', 'PY', 'ACT', 'ITEM', 'UBG', 'FTE', 'ORG', 'N.PREST'];
-    
-    public function __construct() {
-        $this->db = Database::getInstance()->getConnection();
+
+    /**
+     * Contar el total de parámetros de un tipo específico (usa año de sesión)
+     */
+    public function countParametersByType($type) {
+        $year = isset($_SESSION['year']) ? intval($_SESSION['year']) : date('Y');
+        return $this->countParametersByTypeAndYear($type, $year);
     }
 
-        /**
-         * Crear un nuevo parámetro en la tabla plana
-         */
-        public function createParameter($data) {
+    /**
+     * Crear un nuevo parámetro en la tabla plana
+     */
+    public function createParameter($data) {
             // Construir los campos y valores dinámicamente
             $fields = array_keys($data);
             $placeholders = array_map(function($f) { return ':' . $f; }, $fields);
@@ -115,12 +143,22 @@ class Parameter {
         }
 
         /**
-         * Contar el total de parámetros en la tabla plana
+         * Contar el total de parámetros en la tabla plana (GLOBAL - SIN AISLAR POR AÑO)
          */
-        public function countParameters() {
-            $stmt = $this->db->query("SELECT COUNT(*) as total FROM estructura_presupuestaria");
+        public function countParametersByYear($year) {
+            // IGNORAR EL AÑO - PARÁMETROS GLOBALES
+            $stmt = $this->db->prepare("SELECT COUNT(DISTINCT codigo_completo) as total FROM estructura_presupuestaria WHERE codigo_completo IS NOT NULL AND TRIM(codigo_completo) <> ''");
+            $stmt->execute([]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             return $row ? (int)$row['total'] : 0;
+        }
+
+        /**
+         * Contar el total de parámetros en la tabla plana (usa año de sesión)
+         */
+        public function countParameters() {
+            $year = isset($_SESSION['year']) ? intval($_SESSION['year']) : date('Y');
+            return $this->countParametersByYear($year);
         }
 
         /**

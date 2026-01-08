@@ -505,7 +505,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
                             <?php echo htmlspecialchars($_SESSION['usuario_nombre']); ?>
                         </div>
                         <div style="font-size: 11px; color: rgba(255,255,255,0.7);">
-                            <?php echo ucfirst($_SESSION['usuario_tipo']); ?>
+                            <?php echo ucfirst($_SESSION['usuario_tipo']) . '-' . ($_SESSION['year'] ?? date('Y')); ?>
                         </div>
                     </div>
                 </button>

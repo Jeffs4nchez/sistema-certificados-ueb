@@ -17,14 +17,18 @@ class CertificateController {
     }
     
     public function listAction() {
-        // Obtener certificados según el rol del usuario
+        // Obtener año de trabajo actual
+        require_once __DIR__ . '/../controllers/AuthController.php';
+        $year = AuthController::obtenerAnoTrabajo();
+        
+        // Obtener certificados según el rol del usuario y el año
         if (PermisosHelper::esAdmin()) {
-            // Admin ve todos
-            $certificates = $this->certificateModel->getAll();
+            // Admin ve todos del año seleccionado
+            $certificates = $this->certificateModel->getAllByYear($year);
         } else {
-            // Operador solo ve sus certificados
+            // Operador solo ve sus certificados del año seleccionado
             $usuario_id = PermisosHelper::getUsuarioIdActual();
-            $certificates = $this->certificateModel->getByUsuario($usuario_id);
+            $certificates = $this->certificateModel->getByUsuarioAndYear($usuario_id, $year);
         }
         require_once __DIR__ . '/../views/certificate/list.php';
     }
@@ -41,6 +45,17 @@ class CertificateController {
             try {
                 error_log('=== INICIO DE CREATE CERTIFICADO ===');
                 error_log('POST data: ' . print_r($_POST, true));
+                
+                // VALIDACIÓN: Verificar que existan presupuestos para el año actual
+                $yearActual = $_SESSION['year'] ?? date('Y');
+                $db = Database::getInstance()->getConnection();
+                $stmtPresupuesto = $db->prepare("SELECT COUNT(*) as total FROM presupuesto_items WHERE year = ?");
+                $stmtPresupuesto->execute([$yearActual]);
+                $resultPresupuesto = $stmtPresupuesto->fetch();
+                
+                if ($resultPresupuesto['total'] == 0) {
+                    throw new Exception("❌ No se puede crear certificados sin presupuesto.\n\nDebes cargar el archivo de presupuestos para el año {$yearActual} antes de crear certificados.\n\nVe a: Presupuestos > Cargar Presupuesto");
+                }
                 
                 // VALIDACIÓN: Verificar campos obligatorios
                 $camposObligatorios = [
@@ -89,7 +104,8 @@ class CertificateController {
                     'tipo_doc_respaldo' => trim($_POST['tipo_doc_respaldo']),
                     'clase_doc_respaldo' => trim($_POST['clase_doc_respaldo']),
                     'usuario_id' => $_SESSION['usuario_id'] ?? null,
-                    'usuario_creacion' => ($_SESSION['usuario_nombre'] ?? 'Sistema')
+                    'usuario_creacion' => ($_SESSION['usuario_nombre'] ?? 'Sistema'),
+                    'year' => $_SESSION['year'] ?? date('Y')
                 ];
 
                 error_log('Datos del certificado: ' . print_r($certificateData, true));
@@ -112,10 +128,11 @@ class CertificateController {
                 // VALIDACIÓN: Verificar que cada monto NO exceda el monto codificado
                 if (is_array($items) && count($items) > 0) {
                     $erroresValidacion = [];
+                    $yearActual = $_SESSION['year'] ?? date('Y');
                     foreach ($items as $index => $item) {
                         $montoItem = floatval($item['monto'] ?? 0);
                         
-                        // Obtener monto codificado del presupuesto
+                        // Obtener monto codificado del presupuesto DEL AÑO ACTUAL
                         $montoCoificado = $this->certificateItemModel->getMontoCoificado(
                             $item['programa_codigo'] ?? '',
                             $item['subprograma_codigo'] ?? '',
@@ -123,14 +140,19 @@ class CertificateController {
                             $item['actividad_codigo'] ?? '',
                             $item['fuente_codigo'] ?? '',
                             $item['ubicacion_codigo'] ?? '',
-                            $item['item_codigo'] ?? ''
+                            $item['item_codigo'] ?? '',
+                            $yearActual
                         );
                         
-                        error_log("Item " . ($index + 1) . ": Monto=$montoItem, Codificado=$montoCoificado");
+                        error_log("Item " . ($index + 1) . ": Monto=$montoItem, Codificado=$montoCoificado, Año=$yearActual");
                         
+                        // Si el monto codificado es 0, el item NO existe en el presupuesto
+                        if ($montoCoificado == 0) {
+                            $erroresValidacion[] = "Item #" . ($index + 1) . " NO ENCONTRADO en el presupuesto de " . $yearActual . ". Código: " . ($item['item_codigo'] ?? 'desconocido');
+                        }
                         // Si el monto ingresado es MAYOR al codificado, error
-                        if ($montoItem > $montoCoificado) {
-                            $erroresValidacion[] = "Item #" . ($index + 1) . ": Monto ingresado ($" . number_format($montoItem, 2) . ") excede el monto codificado ($" . number_format($montoCoificado, 2) . ")";
+                        else if ($montoItem > $montoCoificado) {
+                            $erroresValidacion[] = "Item #" . ($index + 1) . ": Monto ingresado ($" . number_format($montoItem, 2) . ") excede el presupuesto ($" . number_format($montoCoificado, 2) . ") en " . $yearActual;
                         }
                     }
                     
@@ -180,7 +202,8 @@ class CertificateController {
                             'naturaleza_codigo' => (string)trim($item['naturaleza_codigo'] ?? ''),
                             'descripcion_item' => (string)($item['item_descripcion'] ?? ''),
                             'monto' => (float)($item['monto'] ?? 0),
-                            'codigo_completo' => $codigoCompleto
+                            'codigo_completo' => $codigoCompleto,
+                            'year' => $_SESSION['year'] ?? date('Y')
                         ];
                         
                         try {
@@ -501,14 +524,17 @@ class CertificateController {
      * Acción para exportar certificados a CSV
      */
     public function exportAction() {
-        // Obtener certificados según el rol del usuario
+        // Obtener año de sesión
+        $year = $_SESSION['year'] ?? date('Y');
+        
+        // Obtener certificados según el rol del usuario Y EL AÑO
         if (PermisosHelper::esAdmin()) {
-            // Admin ve todos
-            $certificates = $this->certificateModel->getAll();
+            // Admin ve todos del año actual
+            $certificates = $this->certificateModel->getAllByYear($year);
         } else {
-            // Operador solo ve sus certificados
+            // Operador solo ve sus certificados del año actual
             $usuario_id = PermisosHelper::getUsuarioIdActual();
-            $certificates = $this->certificateModel->getByUsuario($usuario_id);
+            $certificates = $this->certificateModel->getByUsuarioAndYear($usuario_id, $year);
         }
         
         // Crear CSV

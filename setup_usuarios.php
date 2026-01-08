@@ -61,8 +61,8 @@ try {
         $tipo_admin = "admin";
         $contraseña_admin = password_hash("admin123", PASSWORD_BCRYPT);
         
-        $query_admin = "INSERT INTO usuarios (nombre, apellidos, correo_institucional, cargo, tipo_usuario, contraseña) 
-                        VALUES (:nombre, :apellidos, :correo, :cargo, :tipo, :pass)";
+        $query_admin = "INSERT INTO usuarios (nombre, apellidos, correo_institucional, cargo, tipo_usuario, contraseña, es_root) 
+                        VALUES (:nombre, :apellidos, :correo, :cargo, :tipo, :pass, 1)";
         $stmt_admin = $db->prepare($query_admin);
         $stmt_admin->execute([
             ':nombre' => $nombre_admin,
@@ -89,8 +89,8 @@ try {
         $tipo_enc = "encargado";
         $contraseña_enc = password_hash("encargado123", PASSWORD_BCRYPT);
         
-        $query_enc = "INSERT INTO usuarios (nombre, apellidos, correo_institucional, cargo, tipo_usuario, contraseña) 
-                      VALUES (:nombre, :apellidos, :correo, :cargo, :tipo, :pass)";
+        $query_enc = "INSERT INTO usuarios (nombre, apellidos, correo_institucional, cargo, tipo_usuario, contraseña, es_root) 
+                      VALUES (:nombre, :apellidos, :correo, :cargo, :tipo, :pass, 0)";
         $stmt_enc = $db->prepare($query_enc);
         $stmt_enc->execute([
             ':nombre' => $nombre_enc,

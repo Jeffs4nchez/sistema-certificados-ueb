@@ -173,7 +173,9 @@ class APICertificateController {
         require_once __DIR__ . '/../models/PresupuestoItem.php';
         $presupuestoModel = new PresupuestoItem();
         
-        $codigos = $presupuestoModel->getAll();
+        // Obtener año de sesión
+        $year = $_SESSION['year'] ?? date('Y');
+        $codigos = $presupuestoModel->getByYear($year);
         $this->jsonResponse(true, $codigos);
     }
 
@@ -360,6 +362,7 @@ class APICertificateController {
         $cod_fuente = $_GET['cod_fuente'] ?? null;
         $cod_ubicacion = $_GET['cod_ubicacion'] ?? null;
         $cod_item = $_GET['cod_item'] ?? null;
+        $year = $_GET['year'] ?? ($_SESSION['year'] ?? date('Y'));
         
         if (!$cod_programa || !$cod_subprograma || !$cod_proyecto || !$cod_actividad || !$cod_fuente || !$cod_ubicacion || !$cod_item) {
             $this->jsonResponse(false, null, 'Códigos incompletos');
@@ -367,7 +370,7 @@ class APICertificateController {
         
         try {
             $montoCoificado = $this->certificateItemModel->getMontoCoificado(
-                $cod_programa, $cod_subprograma, $cod_proyecto, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item
+                $cod_programa, $cod_subprograma, $cod_proyecto, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item, $year
             );
             
             $this->jsonResponse(true, [

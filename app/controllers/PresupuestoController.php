@@ -13,9 +13,12 @@ class PresupuestoController {
     }
     
     public function listAction() {
-        $items = $this->presupuestoModel->getAll();
-        $totalItems = $this->presupuestoModel->count();
-        $resumen = $this->presupuestoModel->getResumen();
+        require_once __DIR__ . '/../controllers/AuthController.php';
+        $year = AuthController::obtenerAnoTrabajo();
+        
+        $items = $this->presupuestoModel->getByYear($year);
+        $totalItems = $this->presupuestoModel->countByYear($year);
+        $resumen = $this->presupuestoModel->getResumenByYear($year);
         require_once __DIR__ . '/../views/presupuesto/list.php';
     }
     
@@ -151,8 +154,10 @@ class PresupuestoController {
             ob_end_clean();
         }
 
-        $items = $this->presupuestoModel->getAll();
-        $resumen = $this->presupuestoModel->getResumen();
+        // Obtener el año de sesión
+        $year = $_SESSION['year'] ?? date('Y');
+        $items = $this->presupuestoModel->getByYear($year);
+        $resumen = $this->presupuestoModel->getResumenByYear($year);
 
         $filename = 'presupuestos_' . date('YmdHis') . '.csv';
         
@@ -218,8 +223,10 @@ class PresupuestoController {
 
         require_once __DIR__ . '/../helpers/SimplePdfGenerator.php';
 
-        $items = $this->presupuestoModel->getAll();
-        $resumen = $this->presupuestoModel->getResumen();
+        // Obtener el año de sesión
+        $year = $_SESSION['year'] ?? date('Y');
+        $items = $this->presupuestoModel->getByYear($year);
+        $resumen = $this->presupuestoModel->getResumenByYear($year);
 
         $filename = 'presupuestos_' . date('YmdHis') . '.pdf';
         

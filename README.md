@@ -1,7 +1,10 @@
-# Sistema de Certificados - UEB
+# 📊 Sistema de Certificados y Presupuestos - UEB
 
 ## Descripción
-Sistema de gestión de certificados y presupuestos para la Universidad Estatal de Bolívar (UEB). Permite administrar certificados, liquidaciones, presupuestos y generar reportes detallados.
+Sistema integral de gestión de certificados y presupuestos para la Universidad Estatal de Bolívar (UEB). Proporciona herramientas completas para administrar certificados, registrar liquidaciones, gestionar presupuestos y generar reportes detallados con exportación a Excel/PDF.
+
+**Estado**: ✅ Implementación completada y operativa
+**Versión**: 1.0 | **Última actualización**: Enero 2026
 
 ## Características Principales
 

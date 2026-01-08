@@ -4,9 +4,27 @@
  * Versión: 2.1 - 28/11/2025
  */
 $isEdit = isset($certificate) && $certificate;
+
+// Verificar si hay presupuestos cargados para el año actual
+$yearActual = $_SESSION['year'] ?? date('Y');
+$db = Database::getInstance()->getConnection();
+$stmtPresupuesto = $db->prepare("SELECT COUNT(*) as total FROM presupuesto_items WHERE year = ?");
+$stmtPresupuesto->execute([$yearActual]);
+$resultPresupuesto = $stmtPresupuesto->fetch();
+$hayPresupuesto = $resultPresupuesto['total'] > 0;
 ?>
 
 <div class="container-fluid py-4">
+    <!-- VALIDACIÓN: No hay presupuestos -->
+    <?php if (!$isEdit && !$hayPresupuesto): ?>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-left: 5px solid #FFC107;">
+            <i class="fas fa-exclamation-triangle"></i> <strong>⚠️ Sin Presupuestos Cargados</strong><br>
+            No se puede crear certificados porque no hay presupuestos cargados para el año <strong><?php echo $yearActual; ?></strong>.<br>
+            <a href="index.php?action=presupuesto-list" class="alert-link">Ve a Presupuestos y carga el archivo de presupuestos</a> antes de crear certificados.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+    
     <!-- ALERTAS -->
     <?php if (isset($_SESSION['success'])): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -36,7 +54,11 @@ $isEdit = isset($certificate) && $certificate;
         </div>
     </div>
 
-    <form method="POST" id="certificateForm">
+    <form method="POST" id="certificateForm" <?php echo !$isEdit && !$hayPresupuesto ? 'disabled' : ''; ?>>
+        <?php if (!$isEdit && !$hayPresupuesto): ?>
+            <!-- Desabilitar formulario con overlay -->
+            <div style="position: relative; opacity: 0.6; pointer-events: none;">
+        <?php endif; ?>
         <!-- ENCABEZADO DEL CERTIFICADO -->
         <div class="row mb-2">
             <div class="col-lg-8">
@@ -292,7 +314,7 @@ $isEdit = isset($certificate) && $certificate;
 
         <!-- BOTONES DE ACCIÓN -->
         <div class="d-flex gap-2 mb-2">
-            <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">
+            <button type="submit" class="btn btn-primary btn-sm" id="submitBtn" <?php echo !$isEdit && !$hayPresupuesto ? 'disabled' : ''; ?>>
                 <i class="fas fa-save"></i> <?php echo $isEdit ? 'Actualizar' : 'Guardar'; ?> Certificado
             </button>
             <a href="index.php?action=certificate-list" class="btn btn-outline-secondary btn-sm">
@@ -302,6 +324,11 @@ $isEdit = isset($certificate) && $certificate;
 
         <!-- Campo oculto para guardar items como JSON -->
         <input type="hidden" id="itemsData" name="items_data" value="[]">
+        <!-- Campo oculto para el año del certificado -->
+        <input type="hidden" id="yearField" name="year" value="<?php echo htmlspecialchars($yearActual); ?>">
+        <?php if (!$isEdit && !$hayPresupuesto): ?>
+            </div>
+        <?php endif; ?>
     </form>
 </div>
 
@@ -570,6 +597,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             urlMonto += '&cod_fuente=' + encodeURIComponent(codFuente);
             urlMonto += '&cod_ubicacion=' + encodeURIComponent(codUbicacion);
             urlMonto += '&cod_item=' + encodeURIComponent(itemCodigo);
+            urlMonto += '&year=' + encodeURIComponent(document.querySelector('input[name="year"]')?.value || new Date().getFullYear());
             
             const responseMontoData = await fetch(urlMonto);
             const dataMonto = await responseMontoData.json();
@@ -578,9 +606,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const montoCoificado = dataMonto.data.monto_codificado;
                 console.log('Validación de monto:', { monto, montoCoificado });
                 
+                // Si el monto codificado es 0, el item NO existe en el presupuesto
+                if (montoCoificado === 0) {
+                    const year = document.querySelector('input[name="year"]').value;
+                    alert('❌ ITEM NO ENCONTRADO EN PRESUPUESTO\n\nEste item no existe en el presupuesto del año ' + year + '.\n\nPor favor, verifica:\n' +
+                        '✓ Que el código del item sea correcto\n' +
+                        '✓ Que el presupuesto esté cargado para ' + year + '\n' +
+                        '✓ Que el item sea parte de ese presupuesto');
+                    console.error('Item no existe en presupuesto:', { codPrograma, codActividad, codFuente, codUbicacion, itemCodigo });
+                    return;
+                }
+                
                 // Si el monto ingresado EXCEDE el codificado, mostrar alerta
                 if (monto > montoCoificado) {
-                    alert('❌ ERROR: El monto ingresado ($' + monto.toFixed(2) + ') EXCEDE el monto codificado ($' + montoCoificado.toFixed(2) + ')\n\nNo se puede agregar este item.');
+                    alert('❌ MONTO EXCEEDS PRESUPUESTO\n\nEl monto que ingresaste ($' + monto.toFixed(2) + ')\nexcede el monto codificado en presupuesto ($' + montoCoificado.toFixed(2) + ')\n\nDebes ingresar un monto igual o menor al presupuesto.');
                     console.error('Monto invalido:', monto, 'Codificado:', montoCoificado);
                     return;
                 }

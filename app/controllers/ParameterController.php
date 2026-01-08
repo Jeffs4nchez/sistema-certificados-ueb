@@ -20,11 +20,15 @@ class ParameterController {
         $type = $_GET['type'] ?? null;
         $parametros = [];
         $tipos = $this->parameterModel->getParameterTypes();
-        $totalParametros = $this->parameterModel->countParameters();
-        // Nuevo: contar solo los tipos que tienen al menos un parámetro
+        
+        // Filtrar por año de sesión
+        $year = $_SESSION['year'] ?? date('Y');
+        $totalParametros = $this->parameterModel->countParametersByYear($year);
+        
+        // Nuevo: contar solo los tipos que tienen al menos un parámetro (por año)
         $tiposConParametros = [];
         foreach ($tipos as $t) {
-            if ($this->parameterModel->countParametersByType($t) > 0) {
+            if ($this->parameterModel->countParametersByTypeAndYear($t, $year) > 0) {
                 $tiposConParametros[] = $t;
             }
         }
@@ -32,12 +36,12 @@ class ParameterController {
         
         $ordenTipos = ['PG', 'SP', 'PY', 'ACT', 'FTE', 'UBG', 'ITEM', 'ORG', 'N.PREST'];
         if ($type && in_array($type, $tipos)) {
-            $parametros = $this->parameterModel->getDistinctParametersByType($type);
+            $parametros = $this->parameterModel->getDistinctParametersByTypeAndYear($type, $year);
         } else {
             $parametros = [];
             foreach ($ordenTipos as $t) {
                 if (in_array($t, $tipos)) {
-                    $parametros = array_merge($parametros, $this->parameterModel->getDistinctParametersByType($t));
+                    $parametros = array_merge($parametros, $this->parameterModel->getDistinctParametersByTypeAndYear($t, $year));
                 }
             }
             $type = null;

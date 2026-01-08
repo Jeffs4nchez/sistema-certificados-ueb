@@ -6,7 +6,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
                     <div>
                         <strong>Sistema de Gestión de Certificados y Presupuesto</strong>
-                        <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;">© 2025 - Todos los derechos reservados</p>
+                        <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;">© 2026 - Todos los derechos reservados</p>
                     </div>
                     <div style="text-align: right;">
                         <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;">

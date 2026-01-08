@@ -20,19 +20,27 @@ class DashboardController {
         $usuario_id = $_SESSION['usuario_id'] ?? null;
         $usuario_nombre = $_SESSION['usuario_nombre'] ?? 'Usuario';
         
-        // Estadísticas generales (admin ve todo)
-        $totalCertificates = $certificateModel->count();
-        $totalPresupuestos = $presupuestoModel->count();
-        $resumenPresupuesto = $presupuestoModel->getResumen();
-        
-        // Agregar totales de certificados (liquidado) al resumen
-        $totalsCertificados = $certificateModel->getTotalsGlobal();
-        $resumenPresupuesto['total_liquidado'] = $totalsCertificados['total_liquidado'];
-        $resumenPresupuesto['total_certificado'] = $totalsCertificados['total_monto'];
-        
-        // Certificados por estado (global)
-        $pendientes = $certificateModel->countByStatus('PENDIENTE');
-        $completados = $certificateModel->countByStatus('APROBADO');
+        // Filtrar por año si está definido en la sesión
+        $year = $_SESSION['year'] ?? null;
+        if ($year) {
+            $totalCertificates = $certificateModel->countByYear($year);
+            $totalPresupuestos = $presupuestoModel->countByYear($year);
+            $resumenPresupuesto = $presupuestoModel->getResumenByYear($year);
+            $totalsCertificados = $certificateModel->getTotalsGlobalByYear($year);
+            $resumenPresupuesto['total_liquidado'] = $totalsCertificados['total_liquidado'];
+            $resumenPresupuesto['total_certificado'] = $totalsCertificados['total_monto'];
+            $pendientes = $certificateModel->countByStatusAndYear('PENDIENTE', $year);
+            $completados = $certificateModel->countByStatusAndYear('APROBADO', $year);
+        } else {
+            $totalCertificates = $certificateModel->count();
+            $totalPresupuestos = $presupuestoModel->count();
+            $resumenPresupuesto = $presupuestoModel->getResumen();
+            $totalsCertificados = $certificateModel->getTotalsGlobal();
+            $resumenPresupuesto['total_liquidado'] = $totalsCertificados['total_liquidado'];
+            $resumenPresupuesto['total_certificado'] = $totalsCertificados['total_monto'];
+            $pendientes = $certificateModel->countByStatus('PENDIENTE');
+            $completados = $certificateModel->countByStatus('APROBADO');
+        }
         
         // Estadísticas del usuario actual si es operador
         $usuarioCertificates = 0;
@@ -41,12 +49,12 @@ class DashboardController {
         $usuarioTotalLiquidado = 0;
         
         if ($usuario_tipo === 'operador' && $usuario_id) {
-            // Obtener certificados del usuario por su nombre
-            $usuarioCertificates = $certificateModel->countByOperador($usuario_nombre);
-            $usuarioCompletados = $certificateModel->countByOperadorAndStatus($usuario_nombre, 'APROBADO');
+            // Obtener certificados del usuario por su nombre Y EL AÑO
+            $usuarioCertificates = $certificateModel->countByOperador($usuario_nombre, $year);
+            $usuarioCompletados = $certificateModel->countByOperadorAndStatus($usuario_nombre, 'APROBADO', $year);
             
-            // Obtener totales de presupuesto del usuario
-            $usuarioTotales = $certificateModel->getTotalsByOperador($usuario_nombre);
+            // Obtener totales de presupuesto del usuario POR AÑO
+            $usuarioTotales = $certificateModel->getTotalsByOperador($usuario_nombre, $year);
             $usuarioTotalCertificado = $usuarioTotales['total_monto'] ?? 0;
             $usuarioTotalLiquidado = $usuarioTotales['total_liquidado'] ?? 0;
         }

@@ -47,6 +47,26 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             <a class="navbar-brand fw-bold" href="index.php">
                 <i class="fas fa-certificate"></i> Sistema de Gestión
             </a>
+            
+            <!-- Selector de Año de Trabajo - Mejorado -->
+            <div class="ms-2 d-none d-lg-block">
+                <form method="POST" action="?action=auth&method=cambiarAno" class="d-flex gap-2 align-items-center" id="formCambiarAno">
+                    <small style="color: #ffc107; font-weight: bold; white-space: nowrap;">
+                        <i class="fas fa-calendar-alt"></i> <?php echo $_SESSION['year'] ?? date('Y'); ?>
+                    </small>
+                    <select class="form-select form-select-sm" name="año_trabajo" style="max-width: 80px; background-color: #28a745; color: white; border-color: #20c997; font-weight: bold; font-size: 12px;" onchange="document.getElementById('formCambiarAno').submit();" title="Cambiar año de trabajo">
+                        <?php 
+                            $currentYear = date('Y');
+                            $selectedYear = $_SESSION['year'] ?? $currentYear;
+                            for ($i = $currentYear; $i >= $currentYear - 5; $i--) {
+                                $selected = ($i == $selectedYear) ? 'selected' : '';
+                                echo "<option value=\"$i\" $selected>$i</option>";
+                            }
+                        ?>
+                    </select>
+                </form>
+            </div>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -111,10 +131,14 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
                     
                     <!-- User Menu -->
                     <li class="nav-item dropdown ms-3">
-                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle"></i>
-                            <?php echo htmlspecialchars($_SESSION['usuario_nombre']); ?>
-                            <span class="badge bg-info ms-1"><?php echo ucfirst($_SESSION['usuario_tipo']); ?></span>
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" style="flex-direction: column; align-items: flex-start;">
+                            <span>
+                                <i class="fas fa-user-circle"></i>
+                                <?php echo htmlspecialchars($_SESSION['usuario_nombre']); ?>
+                            </span>
+                            <small style="font-size: 11px; color: #ffc107; margin-top: 2px;">
+                                <?php echo ucfirst($_SESSION['usuario_tipo']); ?> - <?php echo $_SESSION['year'] ?? date('Y'); ?>
+                            </small>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                             <li><a class="dropdown-item" href="?action=perfil&method=ver">
