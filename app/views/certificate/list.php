@@ -305,7 +305,8 @@ async function abrirModalRegistroLiquidacion(certificateId) {
                         <td>
                             <input type="number" class="form-control form-control-sm liquidacion-input" 
                                    value=""
-                                   data-detalle-id="${item.id}" 
+                                   data-detalle-id="${item.id}"
+                                   data-descripcion-item="${item.descripcion_item}"
                                    data-cantidad-pendiente="${parseFloat(item.cantidad_pendiente || 0).toFixed(2)}"
                                    step="0.01" min="0" 
                                    onchange="validarLiquidacion(this)" 
@@ -331,6 +332,13 @@ async function abrirModalRegistroLiquidacion(certificateId) {
             `;
             
             document.getElementById('liquidacionContent').innerHTML = html;
+            
+            // Aplicar validación de decimales a los nuevos elementos
+            document.querySelectorAll('.liquidacion-input').forEach(input => {
+                input.addEventListener('keyup', limitarDecimales);
+                input.addEventListener('blur', limitarDecimales);
+            });
+            
             modal.show();
         } else {
             document.getElementById('liquidacionContent').innerHTML = '<div class="alert alert-danger">Error al cargar los detalles</div>';
@@ -393,6 +401,42 @@ async function clearLiquidacion(detalleId, button) {
     }
 }
 
+// Función para limitar decimales a 2 digitos en campos numéricos
+function limitarDecimales(event) {
+    const input = event.target;
+    const value = input.value;
+    
+    // Si el valor contiene más de 2 decimales, truncar
+    if (value.includes('.')) {
+        const parts = value.split('.');
+        if (parts[1] && parts[1].length > 2) {
+            input.value = parts[0] + '.' + parts[1].substring(0, 2);
+        }
+    }
+}
+
+// Aplicar validación a todos los campos numéricos
+document.addEventListener('DOMContentLoaded', function() {
+    // Aplicar a campos liquidacion
+    document.querySelectorAll('.liquidacion-input').forEach(input => {
+        input.addEventListener('keyup', limitarDecimales);
+        input.addEventListener('blur', limitarDecimales);
+    });
+    
+    // Aplicar a campos de monto en modal de edición
+    document.querySelectorAll('.edit-monto-input').forEach(input => {
+        input.addEventListener('keyup', limitarDecimales);
+        input.addEventListener('blur', limitarDecimales);
+    });
+    
+    // Aplicar a campo de monto en formulario de creación
+    const montoItemInput = document.getElementById('monto_item');
+    if (montoItemInput) {
+        montoItemInput.addEventListener('keyup', limitarDecimales);
+        montoItemInput.addEventListener('blur', limitarDecimales);
+    }
+});
+
 // Guardar todas las liquidaciones
 document.getElementById('btnGuardarLiquidaciones').addEventListener('click', async function() {
     const btn = this;
@@ -410,14 +454,14 @@ document.getElementById('btnGuardarLiquidaciones').addEventListener('click', asy
             const memorandoInput = memorandoInputs[index];
             const cantidad = parseFloat(input.value) || 0;
             const cantidadPendiente = parseFloat(input.dataset.cantidadPendiente) || 0;
+            const descripcionItem = input.dataset.descripcionItem || `Item ${input.dataset.detalleId}`;
             
             // Si hay liquidación, validar que tenga memorando
             if (cantidad > 0) {
                 const memorando = memorandoInput.value.trim();
                 if (!memorando) {
                     memorandoInput.classList.add('is-invalid');
-                    const detalleId = input.dataset.detalleId;
-                    erroresValidacion.push(`Item ${detalleId}: El Memorando/Comprobante es obligatorio cuando hay liquidación`);
+                    erroresValidacion.push(`Item: ${descripcionItem}: El Memorando/Comprobante es obligatorio cuando hay liquidación`);
                     hayErrores = true;
                     return;
                 } else {
@@ -462,6 +506,31 @@ document.getElementById('btnGuardarLiquidaciones').addEventListener('click', asy
             btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
             btn.disabled = false;
             alert('⚠️ No hay liquidaciones para guardar. Ingresa al menos una cantidad mayor a 0.');
+            return;
+        }
+        
+        // Mostrar resumen de liquidaciones y pedir confirmación
+        let resumenLiquidaciones = '💰 LIQUIDACIONES A REGISTRAR:\n\n';
+        let montoTotal = 0;
+        
+        liquidacionInputs.forEach((input, index) => {
+            const liq = liquidaciones[index];
+            if (!liq) return;
+            
+            const descripcionItem = input.dataset.descripcionItem || `Item ${liq.detalle_id}`;
+            resumenLiquidaciones += `${index + 1}. ${descripcionItem}\n`;
+            resumenLiquidaciones += `   Cantidad: ${liq.cantidad_liquidacion.toFixed(2)}\n`;
+            resumenLiquidaciones += `   Memorando: ${liq.memorando}\n\n`;
+            montoTotal += liq.cantidad_liquidacion;
+        });
+        
+        resumenLiquidaciones += `📊 TOTAL A LIQUIDAR: $${montoTotal.toFixed(2)}\n\n`;
+        resumenLiquidaciones += '¿Estás seguro de registrar estas liquidaciones?';
+        
+        if (!confirm(resumenLiquidaciones)) {
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar Liquidaciones';
+            btn.disabled = false;
+            console.log('Liquidaciones canceladas por el usuario');
             return;
         }
         
@@ -633,8 +702,22 @@ function openEditModal(certificateId) {
                     document.getElementById('editTipoDocRespaldo').value = cert.tipo_doc_respaldo || '';
                     document.getElementById('editClaseDocRespaldo').value = cert.clase_doc_respaldo || '';
                     
+                    // Guardar los valores originales en data-attributes para comparación
+                    document.getElementById('editInstitucion').dataset.originalValue = cert.institucion || '';
+                    document.getElementById('editSeccionMemorandum').dataset.originalValue = cert.seccion_memorando || '';
+                    document.getElementById('editDescripcionGeneral').dataset.originalValue = cert.descripcion || '';
+                    document.getElementById('editUnidEjecutora').dataset.originalValue = cert.unid_ejecutora || '';
+                    document.getElementById('editUnidDesc').dataset.originalValue = cert.unid_desc || '';
+                    document.getElementById('editClaseRegistro').dataset.originalValue = cert.clase_registro || '';
+                    document.getElementById('editClaseGasto').dataset.originalValue = cert.clase_gasto || '';
+                    document.getElementById('editTipoDocRespaldo').dataset.originalValue = cert.tipo_doc_respaldo || '';
+                    document.getElementById('editClaseDocRespaldo').dataset.originalValue = cert.clase_doc_respaldo || '';
+                    
                     // Cargar los items en la tabla
                     loadEditModalItems(items || []);
+                    
+                    // Resetear el estado del botón de guardar
+                    resetSaveButtonState();
                     
                     // Mostrar el modal
                     const editModal = new bootstrap.Modal(document.getElementById('editCertificateModal'));
@@ -661,12 +744,15 @@ function loadEditModalItems(items) {
     const tbody = document.getElementById('editItemsBody');
     
     if (items.length === 0) {
-        tbody.innerHTML = '<tr class="text-center text-muted"><td colspan="11">No hay items agregados</td></tr>';
+        tbody.innerHTML = '<tr class="text-center text-muted"><td colspan="12">No hay items agregados</td></tr>';
         return;
     }
     
+    // Guardar items en formato para poder acceder después
+    window.editableItems = items;
+    
     tbody.innerHTML = items.map((item, index) => `
-        <tr>
+        <tr data-item-index="${index}" data-item-id="${item.id}" data-item-descripcion="${item.item_descripcion}">
             <td><small>${item.programa_codigo}</small></td>
             <td><small>${item.subprograma_codigo}</small></td>
             <td><small>${item.proyecto_codigo}</small></td>
@@ -677,12 +763,30 @@ function loadEditModalItems(items) {
             <td><small>${item.organismo_codigo}</small></td>
             <td><small>${item.naturaleza_codigo}</small></td>
             <td><small>${item.item_descripcion}</small></td>
-            <td class="text-end">$ ${item.monto.toFixed(2)}</td>
+            <td class="text-end">
+                <input type="number" 
+                       class="form-control form-control-sm edit-monto-input" 
+                       value="${item.monto.toFixed(2)}"
+                       data-index="${index}"
+                       data-original-monto="${item.monto.toFixed(2)}"
+                       data-saldo-disponible="${item.saldo_disponible?.toFixed(2) || 0}"
+                       step="0.01" 
+                       min="0"
+                       style="width: 120px;"
+                       onchange="updateEditTotal()"
+                       oninput="checkForChanges()">
+            </td>
         </tr>
     `).join('');
     
+    // Aplicar validación de decimales a los nuevos inputs
+    document.querySelectorAll('.edit-monto-input').forEach(input => {
+        input.addEventListener('keyup', limitarDecimales);
+        input.addEventListener('blur', limitarDecimales);
+    });
+    
     // Actualizar total
-    updateEditTotal(items);
+    updateEditTotal();
 }
 
 function removeEditItem(index) {
@@ -690,9 +794,69 @@ function removeEditItem(index) {
     alert('Eliminar item desde el modal');
 }
 
-function updateEditTotal(items) {
-    const total = items.reduce((sum, item) => sum + item.monto, 0);
+function updateEditTotal() {
+    // Obtener todos los inputs de monto editables
+    const montoInputs = document.querySelectorAll('.edit-monto-input');
+    let total = 0;
+    
+    montoInputs.forEach(input => {
+        const monto = parseFloat(input.value) || 0;
+        total += monto;
+    });
+    
     document.getElementById('editTotalMonto').textContent = total.toFixed(2);
+}
+
+function checkForChanges() {
+    // Verificar cambios en campos de montos
+    const montoInputs = document.querySelectorAll('.edit-monto-input');
+    let hayChangios = false;
+    
+    montoInputs.forEach(input => {
+        const montoNuevo = parseFloat(input.value) || 0;
+        const montoOriginal = parseFloat(input.dataset.originalMonto) || 0;
+        
+        if (montoNuevo !== montoOriginal) {
+            hayChangios = true;
+        }
+    });
+    
+    // Verificar cambios en campos de texto si no hay cambios en montos
+    if (!hayChangios) {
+        const textFields = [
+            'editInstitucion',
+            'editSeccionMemorandum',
+            'editDescripcionGeneral',
+            'editUnidEjecutora',
+            'editUnidDesc',
+            'editClaseRegistro',
+            'editClaseGasto',
+            'editTipoDocRespaldo',
+            'editClaseDocRespaldo'
+        ];
+        
+        textFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                const valorActual = field.value;
+                const valorOriginal = field.dataset.originalValue || '';
+                
+                if (valorActual !== valorOriginal) {
+                    hayChangios = true;
+                }
+            }
+        });
+    }
+    
+    // Habilitar/deshabilitar botón según haya cambios
+    const saveButton = document.getElementById('saveEditButton');
+    saveButton.disabled = !hayChangios;
+}
+
+function resetSaveButtonState() {
+    // Deshabilitar el botón cuando se abre el modal
+    const saveButton = document.getElementById('saveEditButton');
+    saveButton.disabled = true;
 }
 
 function saveEditCertificate() {
@@ -703,12 +867,112 @@ function saveEditCertificate() {
         return;
     }
     
+    // Recopilar los montos editados de los items
+    const montoInputs = document.querySelectorAll('.edit-monto-input');
+    const itemsEditados = [];
+    let hayErrores = false;
+    let erroresValidacion = [];
+    
+    montoInputs.forEach(input => {
+        const itemIndex = parseInt(input.dataset.index);
+        const row = document.querySelector(`tr[data-item-index="${itemIndex}"]`);
+        const itemId = row.dataset.itemId;
+        const itemDescripcion = row.dataset.itemDescripcion;
+        const montoNuevo = parseFloat(input.value) || 0;
+        const montoOriginal = parseFloat(input.dataset.originalMonto) || 0;
+        const saldoDisponible = parseFloat(input.dataset.saldoDisponible) || 0;
+        
+        // Validar que el monto sea positivo
+        if (montoNuevo < 0) {
+            erroresValidacion.push(`${itemDescripcion}: El monto no puede ser negativo`);
+            hayErrores = true;
+            return;
+        }
+        
+        // VALIDACIÓN: Verificar que el monto no exceda el límite permitido
+        const montoMaximo = saldoDisponible + montoOriginal;
+        if (montoNuevo > montoMaximo) {
+            erroresValidacion.push(`${itemDescripcion}: El monto $${montoNuevo.toFixed(2)} excede el límite permitido de $${montoMaximo.toFixed(2)}`);
+            hayErrores = true;
+            return;
+        }
+        
+        // Solo incluir items que hayan sido modificados
+        if (montoNuevo !== montoOriginal) {
+            itemsEditados.push({
+                id: itemId,
+                monto_nuevo: montoNuevo,
+                monto_original: montoOriginal
+            });
+        }
+    });
+    
+    if (hayErrores) {
+        alert('❌ Por favor corrije los siguientes errores:\n\n' + erroresValidacion.join('\n'));
+        return;
+    }
+    
+    // Mostrar resumen de cambios y pedir confirmación
+    let resumenCambios = '✏️ CAMBIOS A REALIZAR:\n\n';
+    
+    // Agregar cambios de campos de texto
+    const textFields = [
+        { id: 'editInstitucion', label: 'Institución' },
+        { id: 'editSeccionMemorandum', label: 'Sección / Memorando' },
+        { id: 'editDescripcionGeneral', label: 'Descripción General' },
+        { id: 'editUnidEjecutora', label: 'Unidad Ejecutora' },
+        { id: 'editUnidDesc', label: 'Descripción Unidad Ejecutora' },
+        { id: 'editClaseRegistro', label: 'Clase de Registro' },
+        { id: 'editClaseGasto', label: 'Clase de Gasto' },
+        { id: 'editTipoDocRespaldo', label: 'Tipo de Documento Respaldo' },
+        { id: 'editClaseDocRespaldo', label: 'Clase de Documento Respaldo' }
+    ];
+    
+    let hayTextChanges = false;
+    textFields.forEach(field => {
+        const element = document.getElementById(field.id);
+        if (element) {
+            const valorActual = element.value;
+            const valorOriginal = element.dataset.originalValue || '';
+            if (valorActual !== valorOriginal) {
+                resumenCambios += `📝 ${field.label}:\n   De: "${valorOriginal}"\n   A: "${valorActual}"\n\n`;
+                hayTextChanges = true;
+            }
+        }
+    });
+    
+    // Agregar cambios de montos
+    if (itemsEditados.length > 0) {
+        resumenCambios += '💰 MONTOS MODIFICADOS:\n';
+        itemsEditados.forEach(item => {
+            const row = document.querySelector(`tr[data-item-id="${item.id}"]`);
+            const itemDescripcion = row?.dataset.itemDescripcion || `Item ${item.id}`;
+            resumenCambios += `   ${itemDescripcion}\n   De: $${item.monto_original.toFixed(2)} → A: $${item.monto_nuevo.toFixed(2)}\n\n`;
+        });
+    }
+    
+    // Si no hay cambios, avisar
+    if (itemsEditados.length === 0 && !hayTextChanges) {
+        alert('ℹ️ No hay cambios para guardar');
+        return;
+    }
+    
+    // Pedir confirmación
+    resumenCambios += '\n¿Estás seguro de que deseas realizar estos cambios?';
+    
+    if (!confirm(resumenCambios)) {
+        console.log('Cambios cancelados por el usuario');
+        return;
+    }
+    
     const formData = new FormData(document.getElementById('editCertificateForm'));
     formData.append('id', certId);
+    formData.append('items_editados', JSON.stringify(itemsEditados));
     
     // Debug: mostrar datos que se envían
     console.log('=== SALVANDO CERTIFICADO ===');
     console.log('ID:', certId);
+    console.log('Items editados:', itemsEditados);
     console.log('Datos a enviar:', Object.fromEntries(formData));
     
     fetch('index.php?action=certificate-update', {
@@ -733,7 +997,6 @@ function saveEditCertificate() {
             console.log('Parsed JSON:', data);
             
             if (data.success) {
-                alert('✓ Certificado actualizado correctamente');
                 location.reload();
             } else {
                 alert('❌ Error: ' + (data.message || 'Error desconocido'));
@@ -784,58 +1047,58 @@ function saveEditCertificate() {
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label for="editInstitucion" class="form-label small">Institución</label>
-                            <input type="text" class="form-control form-control-sm" id="editInstitucion" name="institucion">
+                            <input type="text" class="form-control form-control-sm" id="editInstitucion" name="institucion" oninput="checkForChanges()">
                         </div>
                         <div class="col-md-6">
                             <label for="editSeccionMemorandum" class="form-label small">Sección / Memorando</label>
-                            <input type="text" class="form-control form-control-sm" id="editSeccionMemorandum" name="seccion_memorando">
+                            <input type="text" class="form-control form-control-sm" id="editSeccionMemorandum" name="seccion_memorando" oninput="checkForChanges()">
                         </div>
                     </div>
                     
                     <div class="row g-2 mb-3">
                         <div class="col-md-12">
                             <label for="editDescripcionGeneral" class="form-label small">Descripción General</label>
-                            <textarea class="form-control form-control-sm" id="editDescripcionGeneral" name="descripcion_general" rows="2"></textarea>
+                            <textarea class="form-control form-control-sm" id="editDescripcionGeneral" name="descripcion_general" rows="2" oninput="checkForChanges()"></textarea>
                         </div>
                     </div>
                     
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label for="editUnidEjecutora" class="form-label small">Unidad Ejecutora</label>
-                            <input type="text" class="form-control form-control-sm" id="editUnidEjecutora" name="unid_ejecutora">
+                            <input type="text" class="form-control form-control-sm" id="editUnidEjecutora" name="unid_ejecutora" oninput="checkForChanges()">
                         </div>
                         <div class="col-md-6">
                             <label for="editUnidDesc" class="form-label small">Descripción Unidad Ejecutora</label>
-                            <input type="text" class="form-control form-control-sm" id="editUnidDesc" name="unid_desc">
+                            <input type="text" class="form-control form-control-sm" id="editUnidDesc" name="unid_desc" oninput="checkForChanges()">
                         </div>
                     </div>
                     
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label for="editClaseRegistro" class="form-label small">Clase de Registro</label>
-                            <input type="text" class="form-control form-control-sm" id="editClaseRegistro" name="clase_registro">
+                            <input type="text" class="form-control form-control-sm" id="editClaseRegistro" name="clase_registro" oninput="checkForChanges()">
                         </div>
                         <div class="col-md-6">
                             <label for="editClaseGasto" class="form-label small">Clase de Gasto</label>
-                            <input type="text" class="form-control form-control-sm" id="editClaseGasto" name="clase_gasto">
+                            <input type="text" class="form-control form-control-sm" id="editClaseGasto" name="clase_gasto" oninput="checkForChanges()">
                         </div>
                     </div>
                     
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label for="editTipoDocRespaldo" class="form-label small">Tipo de Documento Respaldo</label>
-                            <input type="text" class="form-control form-control-sm" id="editTipoDocRespaldo" name="tipo_doc_respaldo">
+                            <input type="text" class="form-control form-control-sm" id="editTipoDocRespaldo" name="tipo_doc_respaldo" oninput="checkForChanges()">
                         </div>
                         <div class="col-md-6">
                             <label for="editClaseDocRespaldo" class="form-label small">Clase de Documento Respaldo</label>
-                            <input type="text" class="form-control form-control-sm" id="editClaseDocRespaldo" name="clase_doc_respaldo">
+                            <input type="text" class="form-control form-control-sm" id="editClaseDocRespaldo" name="clase_doc_respaldo" oninput="checkForChanges()">
                         </div>
                     </div>
                     
                     <!-- Items -->
                     <div class="card mt-3">
                         <div class="card-header" style="background-color: #0B283F !important; color: white !important;">
-                            <h6 class="mb-0" style="color: white !important;">Items del Certificado</h6>
+                            <h6 class="mb-0" style="color: white !important;"><i class="fas fa-edit"></i> Items del Certificado (Editable)</h6>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-sm mb-0">
@@ -851,7 +1114,7 @@ function saveEditCertificate() {
                                         <th>ORG</th>
                                         <th>N.Prest</th>
                                         <th>Descripción</th>
-                                        <th>Monto</th>
+                                        <th>Monto (Editable)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="editItemsBody">
@@ -872,7 +1135,7 @@ function saveEditCertificate() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="saveEditCertificate()">
+                <button type="button" id="saveEditButton" class="btn btn-primary" onclick="saveEditCertificate()" disabled>
                     <i class="fas fa-save"></i> Guardar Cambios
                 </button>
             </div>

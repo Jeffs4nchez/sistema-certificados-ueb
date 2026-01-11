@@ -55,7 +55,7 @@
                 <div class="card-body py-2 px-3">
                     <p class="text-muted mb-1 small"><i class="fas fa-coins fa-xs text-info"></i> Total Codificado</p>
                     <h5 class="mb-0">
-                        $<?php echo number_format($resumen['total_codificado'] ?? 0, 0, '.', ','); ?>
+                        $<?php echo number_format($resumen['total_codificado'] ?? 0, 2, '.', ','); ?>
                     </h5>
                 </div>
             </div>
@@ -66,7 +66,7 @@
                 <div class="card-body py-2 px-3">
                     <p class="text-muted mb-1 small"><i class="fas fa-check-circle fa-xs text-success"></i> Total Certificado</p>
                     <h5 class="mb-0">
-                        $<?php echo number_format($resumen['total_certificado'] ?? 0, 0, '.', ','); ?>
+                        $<?php echo number_format($resumen['total_certificado'] ?? 0, 2, '.', ','); ?>
                     </h5>
                 </div>
             </div>
@@ -77,7 +77,7 @@
                 <div class="card-body py-2 px-3">
                     <p class="text-muted mb-1 small"><i class="fas fa-balance-scale fa-xs text-warning"></i> Saldo Disponible</p>
                     <h5 class="mb-0">
-                        $<?php echo number_format($resumen['total_saldo_disponible'] ?? 0, 0, '.', ','); ?>
+                        $<?php echo number_format($resumen['total_saldo_disponible'] ?? 0, 2, '.', ','); ?>
                     </h5>
                 </div>
             </div>

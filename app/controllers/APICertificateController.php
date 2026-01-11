@@ -369,13 +369,13 @@ class APICertificateController {
         }
         
         try {
-            $montoCoificado = $this->certificateItemModel->getMontoCoificado(
+            $saldoDisponible = $this->certificateItemModel->getMontoCoificado(
                 $cod_programa, $cod_subprograma, $cod_proyecto, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item, $year
             );
             
             $this->jsonResponse(true, [
-                'monto_codificado' => $montoCoificado,
-                'formateado' => number_format($montoCoificado, 2, '.', ',')
+                'saldo_disponible' => $saldoDisponible,
+                'formateado' => number_format($saldoDisponible, 2, '.', ',')
             ]);
         } catch (Exception $e) {
             $this->jsonResponse(false, null, 'Error: ' . $e->getMessage());
@@ -460,6 +460,7 @@ class APICertificateController {
                         'naturaleza_codigo' => $item['naturaleza_codigo'],
                         'item_descripcion' => $item['descripcion_item'],
                         'monto' => floatval($item['monto']),
+                        'saldo_disponible' => floatval($item['saldo_disponible'] ?? 0),
                         'certificado_id' => $certificate_id
                     ];
                 }

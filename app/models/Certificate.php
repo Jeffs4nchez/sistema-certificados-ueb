@@ -300,9 +300,18 @@ class Certificate {
      */
     public function getCertificateDetails($certificado_id) {
         $stmt = $this->db->prepare("
-            SELECT * FROM detalle_certificados 
-            WHERE certificado_id = ? 
-            ORDER BY id ASC
+            SELECT dc.*, pi.saldo_disponible 
+            FROM detalle_certificados dc
+            LEFT JOIN presupuesto_items pi ON (
+                pi.codigog1 = dc.programa_codigo 
+                AND pi.codigog2 = dc.actividad_codigo
+                AND pi.codigog3 = dc.fuente_codigo
+                AND pi.codigog4 = dc.ubicacion_codigo
+                AND pi.codigog5 = dc.item_codigo
+                AND pi.year = (SELECT year FROM certificados WHERE id = dc.certificado_id)
+            )
+            WHERE dc.certificado_id = ? 
+            ORDER BY dc.id ASC
         ");
         $stmt->execute([$certificado_id]);
         return $stmt->fetchAll();
@@ -878,9 +887,144 @@ class Certificate {
     }
 
     /**
+     * Actualizar monto de un item de certificado
+     * Recalcula:
+     * 1. El monto del item en detalle_certificados
+     * 2. El total del certificado (monto_total)
+     * 3. El presupuesto (col4 y saldo_disponible)
+     * 4. Los cálculos de cantidad_pendiente si hay liquidaciones
+     */
+    public function updateItemMonto($item_id, $monto_nuevo, $certificado_id, $year = null) {
+        if ($year === null) {
+            $year = $_SESSION['year'] ?? date('Y');
+        }
+        
+        try {
+            error_log("=== UPDATE ITEM MONTO ===");
+            error_log("Item ID: $item_id, Monto Nuevo: $monto_nuevo, Certificado: $certificado_id, Año: $year");
+            
+            // 1. Obtener el item actual para saber el monto anterior
+            $stmtGet = $this->db->prepare("SELECT monto, codigo_completo FROM detalle_certificados WHERE id = ?");
+            $stmtGet->execute([$item_id]);
+            $item = $stmtGet->fetch();
+            
+            if (!$item) {
+                throw new Exception("Item no encontrado: $item_id");
+            }
+            
+            $monto_anterior = (float)$item['monto'];
+            $codigo_completo = $item['codigo_completo'];
+            $monto_diferencia = $monto_nuevo - $monto_anterior;
+            
+            error_log("Monto anterior: $monto_anterior, Monto nuevo: $monto_nuevo, Diferencia: $monto_diferencia");
+            
+            // 2. Obtener liquidación actual del item
+            $stmtGetLiq = $this->db->prepare("SELECT COALESCE(cantidad_liquidacion, 0) as liq FROM detalle_certificados WHERE id = ?");
+            $stmtGetLiq->execute([$item_id]);
+            $itemLiq = $stmtGetLiq->fetch();
+            $cantidad_liquidacion = (float)($itemLiq['liq'] ?? 0);
+            
+            // 2b. Calcular cantidad_pendiente en PHP
+            $cantidad_pendiente = $monto_nuevo - $cantidad_liquidacion;
+            if ($cantidad_pendiente < 0) {
+                $cantidad_pendiente = 0;
+            }
+            
+            error_log("Cantidad liquidación: $cantidad_liquidacion, Cantidad pendiente calculada: $cantidad_pendiente");
+            
+            // 2c. Actualizar el monto y cantidad_pendiente en detalle_certificados
+            $stmtUpdateItem = $this->db->prepare("
+                UPDATE detalle_certificados 
+                SET 
+                    monto = ?,
+                    cantidad_pendiente = ?,
+                    fecha_actualizacion = NOW()
+                WHERE id = ?
+            ");
+            
+            $stmtUpdateItem->execute([
+                $monto_nuevo,
+                $cantidad_pendiente,
+                $item_id
+            ]);
+            
+            error_log("✓ Item actualizado: monto=$monto_nuevo");
+            
+            // 3. Actualizar el presupuesto (col4 y saldo_disponible)
+            if ($codigo_completo && $monto_diferencia != 0) {
+                // Obtener valores actuales del presupuesto
+                $stmtPresupuesto = $this->db->prepare("
+                    SELECT col3, col4, saldo_disponible 
+                    FROM presupuesto_items 
+                    WHERE codigo_completo = ? AND year = ?
+                ");
+                $stmtPresupuesto->execute([$codigo_completo, $year]);
+                $presupuesto = $stmtPresupuesto->fetch();
+                
+                if ($presupuesto) {
+                    $col3 = (float)$presupuesto['col3'];
+                    $col4_nuevo = (float)$presupuesto['col4'] + $monto_diferencia;
+                    $saldo_nuevo = $col3 - $col4_nuevo;
+                    
+                    $stmtUpdatePresupuesto = $this->db->prepare("
+                        UPDATE presupuesto_items 
+                        SET col4 = ?,
+                            saldo_disponible = ?,
+                            fecha_actualizacion = NOW()
+                        WHERE codigo_completo = ? AND year = ?
+                    ");
+                    
+                    $stmtUpdatePresupuesto->execute([$col4_nuevo, $saldo_nuevo, $codigo_completo, $year]);
+                    error_log("✓ Presupuesto actualizado: codigo=$codigo_completo, col4=$col4_nuevo, saldo=$saldo_nuevo");
+                }
+            }
+            
+            // 4. Actualizar el monto_total del certificado
+            $stmtSumaMonto = $this->db->prepare("
+                SELECT COALESCE(SUM(monto), 0) as total_monto
+                FROM detalle_certificados
+                WHERE certificado_id = ?
+            ");
+            $stmtSumaMonto->execute([$certificado_id]);
+            $resultSuma = $stmtSumaMonto->fetch();
+            $total_monto = (float)$resultSuma['total_monto'];
+            
+            // Actualizar certificado maestro con el nuevo total
+            $stmtUpdateCert = $this->db->prepare("
+                UPDATE certificados
+                SET monto_total = ?,
+                    total_pendiente = (
+                        SELECT COALESCE(SUM(cantidad_pendiente), 0)
+                        FROM detalle_certificados
+                        WHERE certificado_id = ?
+                    ),
+                    fecha_actualizacion = NOW()
+                WHERE id = ?
+            ");
+            
+            $stmtUpdateCert->execute([$total_monto, $certificado_id, $certificado_id]);
+            error_log("✓ Certificado actualizado: total_monto=$total_monto");
+            
+            return [
+                'success' => true,
+                'monto_nuevo' => $monto_nuevo,
+                'total_certificado' => $total_monto
+            ];
+            
+        } catch (Exception $e) {
+            error_log("❌ Error en updateItemMonto: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Actualizar liquidación de un item de detalle_certificados
      * Recalcula cantidad_pendiente = monto - cantidad_liquidacion
      */
+
     public function updateDetailLiquidacion($id, $cantidadLiquidacion) {
         // Obtener el item actual para saber el monto
         $stmtGet = $this->db->prepare("SELECT monto, cantidad_liquidacion FROM detalle_certificados WHERE id = ?");

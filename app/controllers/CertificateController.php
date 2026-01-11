@@ -385,18 +385,59 @@ class CertificateController {
             
             error_log('Datos a actualizar: ' . json_encode($data));
             
-            // Ejecutar actualización
+            // Ejecutar actualización de datos maestros del certificado
             $result = $this->certificateModel->updateCertificate($id, $data);
             
-            if ($result) {
-                error_log('✓ Certificado actualizado correctamente');
+            if (!$result) {
+                error_log('❌ updateCertificate retornó false');
+                throw new Exception('No se pudo actualizar el certificado en la base de datos');
+            }
+            
+            // ============================================================
+            // MANEJAR ACTUALIZACIÓN DE MONTOS DE ITEMS (SI EXISTEN)
+            // ============================================================
+            $itemsEditados = isset($_POST['items_editados']) ? $_POST['items_editados'] : '[]';
+            error_log('Items editados JSON: ' . $itemsEditados);
+            
+            $items = json_decode($itemsEditados, true);
+            error_log('Items decodificados: ' . count($items) . ' items');
+            
+            $year = $_SESSION['year'] ?? date('Y');
+            $erroresItems = [];
+            
+            if (is_array($items) && count($items) > 0) {
+                foreach ($items as $item) {
+                    $item_id = $item['id'] ?? null;
+                    $monto_nuevo = floatval($item['monto_nuevo'] ?? 0);
+                    
+                    if (!$item_id) continue;
+                    
+                    error_log("Actualizando item: ID=$item_id, Monto nuevo=$monto_nuevo");
+                    
+                    $resultadoItem = $this->certificateModel->updateItemMonto($item_id, $monto_nuevo, $id, $year);
+                    
+                    if (!$resultadoItem['success']) {
+                        $erroresItems[] = "Error en item $item_id: " . $resultadoItem['error'];
+                        error_log("❌ Error actualizando item: " . $resultadoItem['error']);
+                    } else {
+                        error_log("✓ Item actualizado correctamente: " . json_encode($resultadoItem));
+                    }
+                }
+            }
+            
+            // Si hay errores en items pero el certificado se actualizó, avisar
+            if (!empty($erroresItems)) {
+                error_log('✓ Certificado actualizado pero con errores en items: ' . implode('; ', $erroresItems));
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Certificado actualizado. Algunos items tuvieron problemas: ' . implode('; ', $erroresItems)
+                ], JSON_UNESCAPED_UNICODE);
+            } else {
+                error_log('✓ Certificado y todos los items actualizados correctamente');
                 echo json_encode([
                     'success' => true,
                     'message' => 'Certificado actualizado correctamente'
                 ], JSON_UNESCAPED_UNICODE);
-            } else {
-                error_log('❌ updateCertificate retornó false');
-                throw new Exception('No se pudo actualizar el certificado en la base de datos');
             }
             exit;
         } catch (Exception $e) {
@@ -408,6 +449,7 @@ class CertificateController {
                 'message' => 'Error: ' . $e->getMessage()
             ], JSON_UNESCAPED_UNICODE);
             exit;
+
         }
     }
     

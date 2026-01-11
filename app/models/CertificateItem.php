@@ -192,7 +192,8 @@ class CertificateItem {
         }
         
         // Buscar en presupuesto_items basado en los códigos Y EL AÑO
-        $sql = "SELECT col3 as monto_codificado FROM presupuesto_items 
+        // Retornar el saldo_disponible que es una columna en la tabla
+        $sql = "SELECT saldo_disponible FROM presupuesto_items 
                 WHERE codigog1 = ? AND codigog2 = ? AND codigog3 = ? AND codigog4 = ? AND codigog5 = ? AND year = ?
                 LIMIT 1";
         
@@ -200,6 +201,6 @@ class CertificateItem {
         $stmt->execute([$cod_programa, $cod_actividad, $cod_fuente, $cod_ubicacion, $cod_item, $year]);
         $row = $stmt->fetch();
         
-        return $row ? (float)$row['monto_codificado'] : 0;
+        return $row ? (float)$row['saldo_disponible'] : 0;
     }
 }

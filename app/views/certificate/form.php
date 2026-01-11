@@ -17,11 +17,18 @@ $hayPresupuesto = $resultPresupuesto['total'] > 0;
 <div class="container-fluid py-4">
     <!-- VALIDACIÓN: No hay presupuestos -->
     <?php if (!$isEdit && !$hayPresupuesto): ?>
-        <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-left: 5px solid #FFC107;">
-            <i class="fas fa-exclamation-triangle"></i> <strong>⚠️ Sin Presupuestos Cargados</strong><br>
-            No se puede crear certificados porque no hay presupuestos cargados para el año <strong><?php echo $yearActual; ?></strong>.<br>
-            <a href="index.php?action=presupuesto-list" class="alert-link">Ve a Presupuestos y carga el archivo de presupuestos</a> antes de crear certificados.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert" style="border-left: 5px solid #FFC107; border-radius: 4px;">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-exclamation-triangle me-3 mt-1" style="font-size: 1.2rem;"></i>
+                <div class="flex-grow-1">
+                    <h5 class="alert-heading mb-2">⚠️ Sin Presupuestos Cargados</h5>
+                    <p class="mb-2">No se puede crear certificados porque no hay presupuestos cargados para el año <strong><?php echo $yearActual; ?></strong>.</p>
+                    <p class="mb-0">
+                        <a href="index.php?action=presupuesto-list" class="alert-link fw-bold">→ Ve a Presupuestos y carga el archivo de presupuestos</a> antes de crear certificados.
+                    </p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     <?php endif; ?>
     
@@ -334,9 +341,30 @@ $hayPresupuesto = $resultPresupuesto['total'] > 0;
 
 <!-- INPUT OCULTO PARA GUARDAR DATOS -->
 <script>
+// Función para limitar decimales a 2 digitos en campos numéricos
+function limitarDecimales(event) {
+    const input = event.target;
+    const value = input.value;
+    
+    // Si el valor contiene más de 2 decimales, truncar
+    if (value.includes('.')) {
+        const parts = value.split('.');
+        if (parts[1] && parts[1].length > 2) {
+            input.value = parts[0] + '.' + parts[1].substring(0, 2);
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     const API_ENDPOINT = 'index.php?action=api-certificate';
     let items = [];
+    
+    // Aplicar limitación de decimales al campo de monto
+    const montoItemInput = document.getElementById('monto_item');
+    if (montoItemInput) {
+        montoItemInput.addEventListener('keyup', limitarDecimales);
+        montoItemInput.addEventListener('blur', limitarDecimales);
+    }
 
     // Cargar items existentes si estamos en modo edición
     <?php if ($isEdit && !empty($itemsJson)): ?>
@@ -587,7 +615,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // VALIDACIÓN: Obtener monto codificado y validar
+        // VALIDACIÓN: Obtener saldo disponible y validar
         try {
             let urlMonto = 'index.php?action=api-certificate&action-api=get-monto-codicado';
             urlMonto += '&cod_programa=' + encodeURIComponent(codPrograma);
@@ -603,39 +631,39 @@ document.addEventListener('DOMContentLoaded', async function() {
             const dataMonto = await responseMontoData.json();
             
             if (dataMonto.success && dataMonto.data) {
-                const montoCoificado = dataMonto.data.monto_codificado;
-                console.log('Validación de monto:', { monto, montoCoificado });
+                const saldoDisponible = dataMonto.data.saldo_disponible;
+                console.log('Validación de monto:', { monto, saldoDisponible });
                 
-                // Si el monto codificado es 0, el item NO existe en el presupuesto
-                if (montoCoificado === 0) {
+                // Si el saldo disponible es 0, el item NO existe en el presupuesto o no hay saldo
+                if (saldoDisponible === 0) {
                     const year = document.querySelector('input[name="year"]').value;
-                    alert('❌ ITEM NO ENCONTRADO EN PRESUPUESTO\n\nEste item no existe en el presupuesto del año ' + year + '.\n\nPor favor, verifica:\n' +
+                    alert('❌ ITEM SIN SALDO DISPONIBLE\n\nEste item no tiene saldo disponible en el presupuesto del año ' + year + '.\n\nPor favor, verifica:\n' +
                         '✓ Que el código del item sea correcto\n' +
                         '✓ Que el presupuesto esté cargado para ' + year + '\n' +
-                        '✓ Que el item sea parte de ese presupuesto');
-                    console.error('Item no existe en presupuesto:', { codPrograma, codActividad, codFuente, codUbicacion, itemCodigo });
+                        '✓ Que el item tenga saldo disponible');
+                    console.error('Item sin saldo disponible:', { codPrograma, codActividad, codFuente, codUbicacion, itemCodigo });
                     return;
                 }
                 
-                // Si el monto ingresado EXCEDE el codificado, mostrar alerta
-                if (monto > montoCoificado) {
-                    alert('❌ MONTO EXCEEDS PRESUPUESTO\n\nEl monto que ingresaste ($' + monto.toFixed(2) + ')\nexcede el monto codificado en presupuesto ($' + montoCoificado.toFixed(2) + ')\n\nDebes ingresar un monto igual o menor al presupuesto.');
-                    console.error('Monto invalido:', monto, 'Codificado:', montoCoificado);
+                // Si el monto ingresado EXCEDE el saldo disponible, mostrar alerta
+                if (monto > saldoDisponible) {
+                    alert('❌ MONTO EXCEDE SALDO DISPONIBLE\n\nEl monto que ingresaste ($' + monto.toFixed(2) + ')\nexcede el saldo disponible ($' + saldoDisponible.toFixed(2) + ')\n\nDebes ingresar un monto igual o menor al saldo disponible.');
+                    console.error('Monto invalido:', monto, 'Saldo Disponible:', saldoDisponible);
                     return;
                 }
                 
                 // Si es igual o menor, está bien
-                if (monto === montoCoificado) {
-                    console.log('✓ Monto igual al codificado');
+                if (monto === saldoDisponible) {
+                    console.log('✓ Monto igual al saldo disponible');
                 } else {
-                    console.log('✓ Monto menor al codificado');
+                    console.log('✓ Monto menor al saldo disponible');
                 }
             } else {
-                console.warn('No se pudo obtener monto codificado:', dataMonto);
+                console.warn('No se pudo obtener saldo disponible:', dataMonto);
                 // Continuar sin validación si la API falla
             }
         } catch (error) {
-            console.error('Error al validar monto codificado:', error);
+            console.error('Error al validar saldo disponible:', error);
             // Continuar sin validación si hay error en AJAX
         }
 

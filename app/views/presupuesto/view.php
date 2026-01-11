@@ -21,7 +21,7 @@
             <!-- Información General -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h5>
+                    <h5 class="mb-0 text-white"><i class="fas fa-info-circle"></i> Información General</h5>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
@@ -80,7 +80,7 @@
             <!-- Información Financiera -->
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Información Financiera</h5>
+                    <h5 class="mb-0 text-white"><i class="fas fa-chart-line"></i> Información Financiera</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -153,7 +153,7 @@
         <div class="col-lg-4">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="fas fa-clock"></i> Información del Sistema</h5>
+                    <h5 class="mb-0 text-white"><i class="fas fa-clock"></i> Información del Sistema</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -174,7 +174,7 @@
             <!-- Códigos de Clasificación -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="fas fa-tags"></i> Códigos</h5>
+                    <h5 class="mb-0 text-white"><i class="fas fa-tags"></i> Códigos</h5>
                 </div>
                 <div class="card-body">
                     <?php

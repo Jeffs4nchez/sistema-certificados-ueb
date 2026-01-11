@@ -50,7 +50,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Certificados Creados</h5>
+                    <h5 class="mb-0 text-white">Certificados Creados</h5>
                 </div>
                 <div class="card-body">
                     <?php if (empty($certificados)): ?>

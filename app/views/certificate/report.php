@@ -51,7 +51,7 @@ require_once __DIR__ . '/../../helpers/MontoHelper.php';
             cursor: pointer;
             font-size: 14px;
             font-weight: 700;
-            position: absolute;
+            position: fixed;
             top: 100px;
             right: 20px;
             z-index: 1000;
@@ -73,6 +73,12 @@ require_once __DIR__ . '/../../helpers/MontoHelper.php';
         
         .print-btn:active {
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(11, 40, 63, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .print-btn i {
+            font-size: 16px;
+        }
             box-shadow: 0 4px 12px rgba(11, 40, 63, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
         

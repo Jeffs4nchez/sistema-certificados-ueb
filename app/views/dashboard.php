@@ -51,7 +51,7 @@
                     </div>
                     <p class="text-muted mb-2"><small><i class="fas fa-coins"></i> Total Codificado</small></p>
                     <h4 class="mb-0">
-                        $<?php echo number_format($resumenPresupuesto['total_codificado'] ?? 0, 0, '.', ','); ?>
+                        $<?php echo number_format($resumenPresupuesto['total_codificado'] ?? 0, 2, '.', ','); ?>
                     </h4>
                 </div>
             </div>
@@ -65,7 +65,7 @@
                     </div>
                     <p class="text-muted mb-2"><small><i class="fas fa-check-circle"></i> Total Certificado</small></p>
                     <h4 class="mb-0">
-                        $<?php echo number_format($resumenPresupuesto['total_certificado'] ?? 0, 0, '.', ','); ?>
+                        $<?php echo number_format($resumenPresupuesto['total_certificado'] ?? 0, 2, '.', ','); ?>
                     </h4>
                 </div>
             </div>
@@ -79,7 +79,7 @@
                     </div>
                     <p class="text-muted mb-2"><small><i class="fas fa-balance-scale"></i> Saldo Disponible</small></p>
                     <h4 class="mb-0">
-                        $<?php echo number_format($resumenPresupuesto['total_saldo_disponible'] ?? 0, 0, '.', ','); ?>
+                        $<?php echo number_format($resumenPresupuesto['total_saldo_disponible'] ?? 0, 2, '.', ','); ?>
                     </h4>
                 </div>
             </div>
@@ -105,7 +105,7 @@
                     </div>
                     <p class="text-muted mb-2"><small><i class="fas fa-money-bill-wave"></i> Total Liquidado</small></p>
                     <h4 class="mb-0">
-                        $<?php echo number_format($resumenPresupuesto['total_liquidado'] ?? 0, 0, '.', ','); ?>
+                        $<?php echo number_format($resumenPresupuesto['total_liquidado'] ?? 0, 2, '.', ','); ?>
                     </h4>
                 </div>
             </div>
@@ -133,13 +133,13 @@
                         <div class="col-md-4 mb-3">
                             <div class="p-3 bg-light rounded">
                                 <p class="text-muted mb-2"><i class="fas fa-check-circle text-warning"></i> Mi Total Certificado</p>
-                                <h4 class="mb-0 text-warning">$<?php echo number_format($usuarioTotalCertificado, 0, '.', ','); ?></h4>
+                                <h4 class="mb-0 text-warning">$<?php echo number_format($usuarioTotalCertificado, 2, '.', ','); ?></h4>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <div class="p-3 bg-light rounded">
                                 <p class="text-muted mb-2"><i class="fas fa-money-bill-wave text-danger"></i> Mi Total Liquidado</p>
-                                <h4 class="mb-0 text-danger">$<?php echo number_format($usuarioTotalLiquidado, 0, '.', ','); ?></h4>
+                                <h4 class="mb-0 text-danger">$<?php echo number_format($usuarioTotalLiquidado, 2, '.', ','); ?></h4>
                             </div>
                         </div>
                     </div>

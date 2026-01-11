@@ -254,7 +254,9 @@ try {
 
         // ========== DEFAULT ==========
         default:
-            header('Location: index.php?action=dashboard');
+            if (!headers_sent()) {
+                header('Location: index.php?action=dashboard');
+            }
             exit;
     }
 } catch (Exception $e) {

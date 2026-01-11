@@ -11,6 +11,10 @@ Sistema integral de gestión de certificados y presupuestos para la Universidad 
 ### 1. Gestión de Certificados
 - Crear, editar y eliminar certificados
 - Asociar múltiples ítems a certificados
+- **✨ NUEVO: Editar montos de items directamente desde el modal**
+  - Edición por item individualmente
+  - Recalculación automática de presupuesto
+  - Mantenimiento de liquidaciones existentes
 - Tracking de estados (Pendiente, Liquidado, Cancelado)
 - Búsqueda y filtrado avanzado
 
