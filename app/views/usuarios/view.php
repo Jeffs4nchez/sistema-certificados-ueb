@@ -65,7 +65,6 @@
                                         <th>Número</th>
                                         <th>Institución</th>
                                         <th>Monto</th>
-                                        <th>Estado</th>
                                         <th>Fecha</th>
                                         <th>Acción</th>
                                     </tr>
@@ -76,21 +75,9 @@
                                             <td><?php echo htmlspecialchars($cert['numero_certificado']); ?></td>
                                             <td><?php echo htmlspecialchars($cert['institucion']); ?></td>
                                             <td>$<?php echo number_format($cert['monto_total'], 2); ?></td>
-                                            <td>
-                                                <span class="badge bg-<?php 
-                                                    echo match($cert['estado']) {
-                                                        'APROBADO' => 'success',
-                                                        'RECHAZADO' => 'danger',
-                                                        'PENDIENTE' => 'warning',
-                                                        default => 'secondary'
-                                                    };
-                                                ?>">
-                                                    <?php echo htmlspecialchars($cert['estado']); ?>
-                                                </span>
-                                            </td>
                                             <td><?php echo date('d/m/Y', strtotime($cert['fecha_creacion'])); ?></td>
                                             <td>
-                                                <a href="?action=certificate&method=view&id=<?php echo $cert['id']; ?>" 
+                                                <a href="index.php?action=certificate-view&id=<?php echo $cert['id']; ?>" 
                                                    class="btn btn-sm btn-info">
                                                     <i class="bi bi-eye"></i>
                                                 </a>

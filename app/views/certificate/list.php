@@ -27,6 +27,94 @@
         </div>
     <?php endif; ?>
 
+    <!-- Formulario de Filtros -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header" style="background-color: #0B283F !important; color: white !important;">
+            <h6 class="mb-0" style="color: white !important;">
+                <i class="fas fa-filter"></i> Filtros
+                <button class="btn btn-sm btn-link float-end p-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" style="text-decoration: none; color: white;">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </h6>
+        </div>
+        <div class="collapse show" id="filtrosCollapse">
+            <div class="card-body p-2">
+                <form method="GET" action="" class="row g-2">
+                    <input type="hidden" name="action" value="certificate-list">
+                    
+                    <!-- Búsqueda general -->
+                    <div class="col-md-2">
+                        <label for="search" class="form-label mb-1" style="font-size: 0.85rem;">
+                            <i class="fas fa-search"></i> Buscar
+                        </label>
+                        <input type="text" class="form-control form-control-sm" id="search" name="search" 
+                               placeholder="Número o inst." 
+                               value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+                    </div>
+                    
+                    <!-- Filtro por Usuario -->
+                    <div class="col-md-2">
+                        <label for="usuario" class="form-label mb-1" style="font-size: 0.85rem;">
+                            <i class="fas fa-user"></i> Usuario
+                        </label>
+                        <select class="form-select form-select-sm" id="usuario" name="usuario">
+                            <option value="">Todos</option>
+                            <?php foreach ($usuarios_filtro as $usuario): ?>
+                                <option value="<?php echo htmlspecialchars($usuario); ?>" 
+                                    <?php echo (($_GET['usuario'] ?? '') === $usuario) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($usuario); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <!-- Filtro por Fecha -->
+                    <div class="col-md-2">
+                        <label for="fecha_desde" class="form-label mb-1" style="font-size: 0.85rem;">Desde</label>
+                        <input type="date" class="form-control form-control-sm" id="fecha_desde" name="fecha_desde" 
+                               value="<?php echo htmlspecialchars($_GET['fecha_desde'] ?? ''); ?>">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="fecha_hasta" class="form-label mb-1" style="font-size: 0.85rem;">Hasta</label>
+                        <input type="date" class="form-control form-control-sm" id="fecha_hasta" name="fecha_hasta" 
+                               value="<?php echo htmlspecialchars($_GET['fecha_hasta'] ?? ''); ?>">
+                    </div>
+                    
+                    <!-- Filtro por Liquidación -->
+                    <div class="col-md-1">
+                        <label for="liquidacion" class="form-label mb-1" style="font-size: 0.85rem;">Liquidación</label>
+                        <select class="form-select form-select-sm" id="liquidacion" name="liquidacion">
+                            <option value="">Todas</option>
+                            <option value="completa" <?php echo (($_GET['liquidacion'] ?? '') === 'completa') ? 'selected' : ''; ?>>
+                                Completa
+                            </option>
+                            <option value="parcial" <?php echo (($_GET['liquidacion'] ?? '') === 'parcial') ? 'selected' : ''; ?>>
+                                Parcial
+                            </option>
+                            <option value="sin_liquidar" <?php echo (($_GET['liquidacion'] ?? '') === 'sin_liquidar') ? 'selected' : ''; ?>>
+                                Sin liquidar
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="col-md-3">
+                        <label class="form-label mb-1" style="font-size: 0.85rem;">&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-sm btn-primary" style="font-size: 0.8rem;">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <a href="?action=certificate-list" class="btn btn-sm btn-secondary" style="font-size: 0.8rem;">
+                                <i class="fas fa-redo"></i> Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow-sm border-0">
         <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
             <h5 class="mb-0" style="color: white !important;"><i class="fas fa-table"></i> Lista de Certificados</h5>

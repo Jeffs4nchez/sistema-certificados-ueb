@@ -79,7 +79,7 @@ $hayPresupuesto = $resultPresupuesto['total'] > 0;
                                 <label for="numero_certificado" class="form-label small">Número de Certificado</label>
                                 <div class="input-group input-group-sm">
                                     <input type="text" class="form-control form-control-sm bg-light" id="numero_certificado" 
-                                           name="numero" readonly style="cursor: not-allowed;">
+                                           name="numero" readonly style="cursor: not-allowed;" value="Cargando...">
                                     <span class="input-group-text input-group-text-sm">Automático</span>
                                 </div>
                                 <small class="text-muted d-block mt-1">Se asignará automáticamente al guardar</small>
@@ -386,13 +386,26 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function loadNextCertificateNumber() {
         try {
             let url = 'index.php?action=api-certificate&action-api=get-next-certificate-number';
+            console.log('Cargando número de certificado desde:', url);
             const response = await fetch(url);
-            const data = await response.json();
+            const text = await response.text();
+            console.log('Respuesta bruta:', text);
+            const data = JSON.parse(text);
+            console.log('Datos parsedos:', data);
             if (data.success && data.data) {
+                console.log('Número de certificado:', data.data.numero_certificado);
                 document.getElementById('numero_certificado').value = data.data.numero_certificado;
+            } else {
+                console.warn('Respuesta sin éxito:', data);
+                // Si falla, generar uno por defecto
+                const defaultNum = 'CERT-' + String(new Date().getTime()).slice(-3);
+                document.getElementById('numero_certificado').value = defaultNum;
             }
         } catch (error) {
             console.error('Error al cargar número de certificado:', error);
+            // Generar número por defecto si falla
+            const defaultNum = 'CERT-001';
+            document.getElementById('numero_certificado').value = defaultNum;
         }
     }
 

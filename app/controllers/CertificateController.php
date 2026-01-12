@@ -30,7 +30,81 @@ class CertificateController {
             $usuario_id = PermisosHelper::getUsuarioIdActual();
             $certificates = $this->certificateModel->getByUsuarioAndYear($usuario_id, $year);
         }
+        
+        // Aplicar filtros si existen
+        $certificates = $this->aplicarFiltros($certificates);
+        
+        // Obtener lista de usuarios únicos para el filtro
+        $usuarios_filtro = $this->obtenerUsuariosUnicos($certificates);
+        
         require_once __DIR__ . '/../views/certificate/list.php';
+    }
+    
+    private function aplicarFiltros($certificates) {
+        $filtrado = $certificates;
+        
+        // Filtro por búsqueda general (número de certificado o institución)
+        if (!empty($_GET['search'])) {
+            $search = strtolower(trim($_GET['search']));
+            $filtrado = array_filter($filtrado, function($cert) use ($search) {
+                $numero = strtolower($cert['numero_certificado'] ?? '');
+                $institucion = strtolower($cert['institucion'] ?? '');
+                return strpos($numero, $search) !== false || strpos($institucion, $search) !== false;
+            });
+        }
+        
+        // Filtro por usuario
+        if (!empty($_GET['usuario'])) {
+            $usuario = trim($_GET['usuario']);
+            $filtrado = array_filter($filtrado, function($cert) use ($usuario) {
+                return ($cert['usuario_creacion'] ?? '') === $usuario;
+            });
+        }
+        
+        // Filtro por fecha desde
+        if (!empty($_GET['fecha_desde'])) {
+            $fecha_desde = strtotime($_GET['fecha_desde']);
+            $filtrado = array_filter($filtrado, function($cert) use ($fecha_desde) {
+                $cert_fecha = strtotime($cert['fecha_elaboracion'] ?? '2025-01-01');
+                return $cert_fecha >= $fecha_desde;
+            });
+        }
+        
+        // Filtro por fecha hasta
+        if (!empty($_GET['fecha_hasta'])) {
+            $fecha_hasta = strtotime($_GET['fecha_hasta']);
+            $filtrado = array_filter($filtrado, function($cert) use ($fecha_hasta) {
+                $cert_fecha = strtotime($cert['fecha_elaboracion'] ?? '2025-01-01');
+                return $cert_fecha <= $fecha_hasta;
+            });
+        }
+        
+        // Filtro por liquidación
+        if (!empty($_GET['liquidacion'])) {
+            $liquidacion = $_GET['liquidacion'];
+            $filtrado = array_filter($filtrado, function($cert) use ($liquidacion) {
+                $total_liquidado = floatval($cert['total_liquidado'] ?? 0);
+                $monto_total = floatval($cert['monto_total'] ?? 0);
+                
+                if ($liquidacion === 'completa') {
+                    return $monto_total > 0 && $total_liquidado >= $monto_total;
+                } elseif ($liquidacion === 'parcial') {
+                    return $total_liquidado > 0 && $total_liquidado < $monto_total;
+                } elseif ($liquidacion === 'sin_liquidar') {
+                    return $total_liquidado <= 0;
+                }
+                return true;
+            });
+        }
+        
+        return array_values($filtrado); // Reindexar el array
+    }
+    
+    private function obtenerUsuariosUnicos($certificates) {
+        $usuarios = array_unique(array_map(function($cert) {
+            return $cert['usuario_creacion'] ?? 'Sistema';
+        }, $certificates));
+        return array_values(array_filter($usuarios));
     }
     
     public function createAction() {

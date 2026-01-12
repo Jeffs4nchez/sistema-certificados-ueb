@@ -148,22 +148,49 @@ class APICertificateController {
     }
 
     /**
-     * Obtener el siguiente número de certificado
+     * Obtener el siguiente número de certificado (reinicia por año)
      */
     public function getNextCertificateNumberAction() {
-        $stmt = $this->db->prepare("SELECT MAX(id) as max_id FROM certificados");
-        $stmt->execute();
-        $row = $stmt->fetch();
-        $maxId = $row['max_id'] ?? 0;
-        $nextId = $maxId + 1;
-        
-        // Formato: CERT-001, CERT-002, CERT-003, etc.
-        $numeroCertificado = 'CERT-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
-        
-        $this->jsonResponse(true, [
-            'numero_certificado' => $numeroCertificado,
-            'proximo_id' => $nextId
-        ]);
+        try {
+            // Obtener el año actual de la sesión o usar el año actual
+            $year = $_SESSION['year'] ?? date('Y');
+            
+            error_log('=== GET NEXT CERTIFICATE NUMBER ===');
+            error_log('Año: ' . $year);
+            
+            // Obtener el último certificado del año actual
+            $stmt = $this->db->prepare("
+                SELECT numero_certificado FROM certificados 
+                WHERE year = ? AND numero_certificado LIKE 'CERT-%'
+                ORDER BY id DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$year]);
+            $row = $stmt->fetch();
+            
+            error_log('Último certificado encontrado: ' . json_encode($row));
+            
+            $nextNumero = 1;
+            if ($row && !empty($row['numero_certificado'])) {
+                // Extraer el número de "CERT-001"
+                $numeroActual = (int)str_replace('CERT-', '', $row['numero_certificado']);
+                $nextNumero = $numeroActual + 1;
+            }
+            
+            // Formato: CERT-001, CERT-002, CERT-003, etc. (reinicia cada año)
+            $numeroCertificado = 'CERT-' . str_pad($nextNumero, 3, '0', STR_PAD_LEFT);
+            
+            error_log('Próximo número: ' . $numeroCertificado);
+            
+            $this->jsonResponse(true, [
+                'numero_certificado' => $numeroCertificado,
+                'proximo_numero' => $nextNumero,
+                'año' => $year
+            ]);
+        } catch (Exception $e) {
+            error_log('Error en getNextCertificateNumber: ' . $e->getMessage());
+            $this->jsonResponse(false, null, 'Error: ' . $e->getMessage());
+        }
     }
 
     /**

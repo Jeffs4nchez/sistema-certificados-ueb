@@ -87,7 +87,8 @@
                 <?php endif; ?>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="submitBtn" 
+                            <?php echo isset($editar) ? 'disabled' : ''; ?>>
                         <i class="bi bi-check-circle"></i> 
                         <?php echo isset($editar) ? 'Actualizar' : 'Crear'; ?> Usuario
                     </button>
@@ -99,3 +100,39 @@
         </div>
     </div>
 </div>
+
+<?php if (isset($editar)): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    const inputs = form.querySelectorAll('input[type="text"], input[type="email"], select');
+    
+    // Guardar valores originales
+    const originalValues = {};
+    inputs.forEach(input => {
+        originalValues[input.name] = input.value;
+    });
+    
+    // Función para verificar si hay cambios
+    function hasChanges() {
+        for (let input of inputs) {
+            if (originalValues[input.name] !== input.value) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Agregar listener a todos los inputs
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            submitBtn.disabled = !hasChanges();
+        });
+        input.addEventListener('input', function() {
+            submitBtn.disabled = !hasChanges();
+        });
+    });
+});
+</script>
+<?php endif; ?>
