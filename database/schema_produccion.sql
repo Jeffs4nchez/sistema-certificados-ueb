@@ -1,7 +1,8 @@
 -- =====================================================
 -- SCRIPT DE CREACIÓN DE BASE DE DATOS - PRODUCCIÓN
 -- Sistema de Gestión de Certificados y Liquidaciones
--- Fecha: 2026-01-12
+-- Fecha: 2026-01-13
+-- Versión: v1.3 - Incluye tipos de usuario: admin, operador, consultor
 -- =====================================================
 
 SET statement_timeout = 0;
@@ -18,6 +19,7 @@ SET row_security = off;
 
 -- =====================================================
 -- TABLA: usuarios
+-- Tipos válidos: 'admin', 'operador', 'consultor'
 -- =====================================================
 CREATE TABLE public.usuarios (
     id SERIAL PRIMARY KEY,
