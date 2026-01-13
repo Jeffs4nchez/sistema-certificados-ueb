@@ -28,6 +28,7 @@
 
     <!-- Tarjetas KPI con tamaño uniforme -->
     <div class="row mb-4">
+        <?php if ($mostrar_certificados): ?>
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body text-center">
@@ -42,7 +43,9 @@
                 </div>
             </div>
         </div>
+        <?php endif; ?>
 
+        <?php if ($mostrar_presupuesto): ?>
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body text-center">
@@ -110,10 +113,10 @@
                 </div>
             </div>
         </div>
-    </div>
+        <?php endif; ?>
 
     <!-- Sección Informativa de Certificados para Operadores -->
-    <?php if (($usuario_tipo ?? 'operador') === 'operador'): ?>
+    <?php if ($mostrar_certificados && (($usuario_tipo ?? 'operador') === 'operador')): ?>
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="card shadow-sm border-0">

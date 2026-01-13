@@ -127,6 +127,11 @@ class PresupuestoController {
     }
     
     public function deleteAction($id) {
+        // Solo admin puede eliminar presupuestos
+        if (!PermisosHelper::esAdmin()) {
+            PermisosHelper::denegarAcceso('Solo administradores pueden eliminar presupuestos.');
+        }
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $this->presupuestoModel->delete($id);
@@ -144,9 +149,9 @@ class PresupuestoController {
      * Exportar presupuestos a CSV
      */
     public function exportExcelAction() {
-        // Solo admin puede exportar
-        if (!PermisosHelper::puedeGestionarUsuarios()) {
-            PermisosHelper::denegarAcceso('Solo administradores pueden exportar presupuestos.');
+        // Admin y Consultor pueden exportar
+        if (!PermisosHelper::puedeExportarPresupuesto()) {
+            PermisosHelper::denegarAcceso('No tienes permisos para exportar presupuestos.');
         }
 
         // Limpiar output buffering
@@ -211,9 +216,9 @@ class PresupuestoController {
      * Exportar presupuestos a PDF
      */
     public function exportPdfAction() {
-        // Solo admin puede exportar
-        if (!PermisosHelper::puedeGestionarUsuarios()) {
-            PermisosHelper::denegarAcceso('Solo administradores pueden exportar presupuestos.');
+        // Admin y Consultor pueden exportar
+        if (!PermisosHelper::puedeExportarPresupuesto()) {
+            PermisosHelper::denegarAcceso('No tienes permisos para exportar presupuestos.');
         }
 
         // Limpiar output buffering

@@ -20,6 +20,13 @@ class PermisosHelper {
     }
 
     /**
+     * Verificar si el usuario actual es consultor (solo ve presupuestos)
+     */
+    public static function esConsultor() {
+        return isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'consultor';
+    }
+
+    /**
      * Obtener el tipo de usuario actual
      */
     public static function getTipoUsuarioActual() {
@@ -57,6 +64,18 @@ class PermisosHelper {
                 'perfil',                  // Ver perfil propio
             ];
             return in_array($accion, $operador_acciones);
+        }
+
+        // Consultor - acciones permitidas (solo presupuestos)
+        if ($tipo === 'consultor') {
+            $consultor_acciones = [
+                'presupuesto-list',        // Ver presupuestos
+                'presupuesto-view',        // Ver detalle presupuesto
+                'presupuesto-export',      // Exportar presupuestos
+                'dashboard',               // Ver dashboard
+                'perfil',                  // Ver perfil propio
+            ];
+            return in_array($accion, $consultor_acciones);
         }
 
         return false;
@@ -130,6 +149,13 @@ class PermisosHelper {
      */
     public static function puedeEliminarLiquidacion() {
         return self::esAdmin();
+    }
+
+    /**
+     * Verificar si puede exportar presupuestos (admin, operador y consultor)
+     */
+    public static function puedeExportarPresupuesto() {
+        return self::esAdmin() || self::esOperador() || self::esConsultor();
     }
 
     /**

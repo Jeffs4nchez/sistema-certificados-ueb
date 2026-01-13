@@ -536,6 +536,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
             </li>
 
             <!-- CERTIFICADOS -->
+            <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] !== 'consultor'): ?>
             <li class="nav-section">
                 <div class="nav-label">Certificados</div>
                 <a href="index.php?action=certificate-list" class="<?php echo isset($_GET['action']) && $_GET['action'] === 'certificate-list' ? 'active' : ''; ?>">
@@ -553,6 +554,7 @@ if (!isset($_SESSION['usuario_id']) && isset($_GET['action']) && $_GET['action']
                 </a>
                 <?php endif; ?>
             </li>
+            <?php endif; ?>
 
             <!-- PRESUPUESTO -->
             <li class="nav-section">

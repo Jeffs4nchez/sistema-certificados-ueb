@@ -47,6 +47,7 @@ class DashboardController {
         $usuarioCompletados = 0;
         $usuarioTotalCertificado = 0;
         $usuarioTotalLiquidado = 0;
+        $es_consultor = false;
         
         if ($usuario_tipo === 'operador' && $usuario_id) {
             // Obtener certificados del usuario por su nombre Y EL AÑO
@@ -58,6 +59,15 @@ class DashboardController {
             $usuarioTotalCertificado = $usuarioTotales['total_monto'] ?? 0;
             $usuarioTotalLiquidado = $usuarioTotales['total_liquidado'] ?? 0;
         }
+        
+        // Si es consultor, solo ver presupuestos
+        if ($usuario_tipo === 'consultor') {
+            $es_consultor = true;
+        }
+        
+        // Pasar variable a la vista para filtrar contenido
+        $mostrar_certificados = ($usuario_tipo === 'admin' || $usuario_tipo === 'operador');
+        $mostrar_presupuesto = true;
         
         require_once __DIR__ . '/../views/dashboard.php';
     }

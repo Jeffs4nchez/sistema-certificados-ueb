@@ -15,6 +15,10 @@
             <a href="index.php?action=presupuesto-upload" class="btn btn-primary btn-sm">
                 <i class="fas fa-upload"></i> Importar CSV
             </a>
+            <?php endif; ?>
+            
+            <!-- Botones de exportación: Admin, Operador y Consultor pueden exportar -->
+            <?php if (isset($_SESSION['usuario_tipo']) && ($_SESSION['usuario_tipo'] === 'admin' || $_SESSION['usuario_tipo'] === 'operador' || $_SESSION['usuario_tipo'] === 'consultor')): ?>
             <a href="index.php?action=presupuesto-export-excel" class="btn btn-success btn-sm" title="Exportar a CSV">
                 <i class="fas fa-file-csv"></i> Exportar CSV
             </a>
@@ -175,9 +179,11 @@
                     <table class="table table-hover mb-0">
                         <thead style="background-color: #0B283F !important; color: white !important;">
                             <tr>
+                                <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
                                 <th style="width: 40px;">
                                     <input type="checkbox" id="selectAll" class="form-check-input" onchange="toggleAllCheckboxes(this)">
                                 </th>
+                                <?php endif; ?>
                                 <th style="width: 50px;">#</th>
                                 <th>Código Programa</th>
                                 <th>Código Actividad</th>
@@ -206,9 +212,11 @@
                                     data-programa="<?php echo htmlspecialchars($item['codigog1']); ?>"
                                     data-actividad="<?php echo htmlspecialchars($item['codigog2']); ?>"
                                     data-fuente="<?php echo htmlspecialchars($item['codigog3']); ?>">
+                                    <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
                                     <td>
                                         <input type="checkbox" class="form-check-input presupuesto-checkbox" data-id="<?php echo $item['id']; ?>">
                                     </td>
+                                    <?php endif; ?>
                                     <td class="text-muted small"><?php echo htmlspecialchars($item['id']); ?></td>
                                     <td>
                                         <strong><?php echo htmlspecialchars($item['codigog1']); ?></strong>
@@ -256,6 +264,7 @@
     </div>
 
     <!-- Panel de acciones para registros seleccionados -->
+    <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
     <div id="selectedActionsPanel" class="mt-3 p-3 bg-light border rounded d-none">
         <div class="row align-items-center">
             <div class="col-md-6">
@@ -268,6 +277,7 @@
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <!-- Modal de confirmación para borrado múltiple -->
@@ -275,14 +285,27 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación múltiple</h5>
+                <h5 class="modal-title" style="color: white;"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación múltiple</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>¿Estás seguro de que deseas eliminar los <strong id="confirmDeleteCount">0</strong> presupuestos seleccionados?</p>
                 <p class="text-danger small"><i class="fas fa-info-circle"></i> Esta acción no se puede deshacer.</p>
+                
+                <!-- Barra de progreso (inicialmente oculta) -->
+                <div id="progressContainer" class="mt-4 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted">Eliminando presupuestos...</span>
+                        <span id="progressText" class="small font-weight-bold">0 / 0</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span id="progressPercentage" class="small">0%</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" id="modalFooter">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-danger" onclick="confirmDeleteSelected()">Eliminar</button>
             </div>
@@ -347,14 +370,37 @@ function confirmDeleteSelected() {
     let deletedCount = 0;
     let errorCount = 0;
     let currentIndex = 0;
+    const totalItems = toDelete.length;
+    
+    // Mostrar barra de progreso y ocultar botones
+    document.getElementById('progressContainer').classList.remove('d-none');
+    document.getElementById('modalFooter').querySelectorAll('button').forEach(btn => {
+        if (btn.className.includes('btn-danger')) {
+            btn.disabled = true;
+        } else if (btn.className.includes('btn-secondary')) {
+            btn.disabled = true;
+        }
+    });
     
     const deleteNextItem = () => {
         if (currentIndex >= toDelete.length) {
-            if (deletedCount + errorCount === toDelete.length) {
-                setTimeout(() => {
-                    location.reload();
-                }, 500);
+            // Actualizar mensaje final
+            const progressText = document.getElementById('progressText');
+            progressText.textContent = deletedCount + ' / ' + totalItems;
+            
+            // Cambiar el color de la barra a verde si todo fue bien
+            if (errorCount === 0) {
+                document.getElementById('progressBar').classList.remove('progress-bar-striped', 'progress-bar-animated');
+                document.getElementById('progressBar').classList.add('bg-success');
+            } else {
+                document.getElementById('progressBar').classList.remove('progress-bar-striped', 'progress-bar-animated');
+                document.getElementById('progressBar').classList.add('bg-warning');
             }
+            
+            // Recargar después de 1.5 segundos
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
             return;
         }
         
@@ -386,13 +432,19 @@ function confirmDeleteSelected() {
         .finally(() => {
             form.remove();
             currentIndex++;
+            
+            // Actualizar barra de progreso
+            const percentage = Math.round((currentIndex / totalItems) * 100);
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressBar').setAttribute('aria-valuenow', percentage);
+            document.getElementById('progressPercentage').textContent = percentage + '%';
+            document.getElementById('progressText').textContent = (deletedCount + errorCount) + ' / ' + totalItems;
+            
             deleteNextItem();
         });
     };
     
     deleteNextItem();
-    
-    bootstrap.Modal.getInstance(document.getElementById('deleteMultipleModal')).hide();
 }
 
 function applyFilters() {

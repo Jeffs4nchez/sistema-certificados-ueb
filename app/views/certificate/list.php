@@ -133,6 +133,11 @@
                     <table class="table table-hover mb-0">
                         <thead style="background-color: #0B283F !important; color: white !important;">
                             <tr>
+                                <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
+                                <th style="width: 50px; text-align: center;">
+                                    <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes(this)" style="cursor: pointer;">
+                                </th>
+                                <?php endif; ?>
                                 <th style="width: 80px;">#</th>
                                 <th>Número Certificado</th>
                                 <th>Institución</th>
@@ -147,6 +152,11 @@
                         <tbody>
                             <?php foreach ($certificates as $cert): ?>
                                 <tr>
+                                    <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="cert-checkbox" data-id="<?php echo $cert['id']; ?>" onchange="updateSelectedPanel()" style="cursor: pointer;">
+                                    </td>
+                                    <?php endif; ?>
                                     <td class="text-muted small fw-bold"><?php echo htmlspecialchars($cert['id']); ?></td>
                                     <td class="fw-bold"><?php echo htmlspecialchars($cert['numero_certificado'] ?? 'N/A'); ?></td>
                                     <td><?php echo htmlspecialchars($cert['institucion'] ?? ''); ?></td>
@@ -186,7 +196,192 @@
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Panel de Eliminación Múltiple (solo para admin) -->
+    <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
+    <div id="selectedActionsPanel" class="card border-0 shadow-sm mt-3 d-none" style="background-color: #f8f9fa;">
+        <div class="card-body py-3 px-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span class="badge bg-info me-2" id="selectedCount">0 seleccionados</span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSelectedCertificates()" title="Eliminar seleccionados">
+                        <i class="fas fa-trash"></i> Eliminar seleccionados
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
+
+<!-- Modal de confirmación para borrado múltiple -->
+<div class="modal fade" id="deleteMultipleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" style="color: white;"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación múltiple</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar los <strong id="confirmDeleteCount">0</strong> certificados seleccionados?</p>
+                <p class="text-danger small"><i class="fas fa-info-circle"></i> Esta acción no se puede deshacer.</p>
+                
+                <!-- Barra de progreso (inicialmente oculta) -->
+                <div id="progressContainer" class="mt-4 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted">Eliminando certificados...</span>
+                        <span id="progressText" class="small font-weight-bold">0 / 0</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span id="progressPercentage" class="small">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteSelected()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Función para alternar todos los checkboxes
+function toggleAllCheckboxes(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.cert-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateSelectedPanel();
+}
+
+// Función para actualizar el panel de seleccionados
+function updateSelectedPanel() {
+    const checkboxes = document.querySelectorAll('.cert-checkbox:checked');
+    const panel = document.getElementById('selectedActionsPanel');
+    const count = document.getElementById('selectedCount');
+    
+    if (checkboxes.length > 0) {
+        count.textContent = checkboxes.length + ' seleccionado' + (checkboxes.length !== 1 ? 's' : '');
+        panel.classList.remove('d-none');
+    } else {
+        panel.classList.add('d-none');
+        document.getElementById('selectAll').checked = false;
+    }
+}
+
+// Agregar event listeners a los checkboxes individuales
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.cert-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedPanel);
+    });
+});
+
+// Función para mostrar confirmación de borrado múltiple
+function deleteSelectedCertificates() {
+    const checkboxes = document.querySelectorAll('.cert-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Por favor selecciona al menos un certificado');
+        return;
+    }
+    
+    const count = checkboxes.length;
+    document.getElementById('confirmDeleteCount').textContent = count;
+    const modal = new bootstrap.Modal(document.getElementById('deleteMultipleModal'));
+    modal.show();
+}
+
+// Función para confirmar y ejecutar el borrado múltiple
+function confirmDeleteSelected() {
+    const checkboxes = document.querySelectorAll('.cert-checkbox:checked');
+    
+    const toDelete = Array.from(checkboxes).map(cb => ({
+        id: cb.dataset.id
+    }));
+    
+    let deletedCount = 0;
+    let errorCount = 0;
+    let currentIndex = 0;
+    const totalItems = toDelete.length;
+    
+    // Mostrar barra de progreso y ocultar botones
+    document.getElementById('progressContainer').classList.remove('d-none');
+    document.getElementById('modalFooter').querySelectorAll('button').forEach(btn => {
+        if (btn.className.includes('btn-danger') || btn.className.includes('btn-secondary')) {
+            btn.disabled = true;
+        }
+    });
+    
+    const deleteNextItem = () => {
+        if (currentIndex >= toDelete.length) {
+            // Todos completados
+            const progressText = document.getElementById('progressText');
+            progressText.textContent = deletedCount + ' / ' + totalItems;
+            
+            // Cambiar el color de la barra a verde si todo fue bien
+            if (errorCount === 0) {
+                document.getElementById('progressBar').classList.remove('progress-bar-striped', 'progress-bar-animated');
+                document.getElementById('progressBar').classList.add('bg-success');
+            } else {
+                document.getElementById('progressBar').classList.remove('progress-bar-striped', 'progress-bar-animated');
+                document.getElementById('progressBar').classList.add('bg-warning');
+            }
+            
+            // Recargar después de 1.5 segundos
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+            return;
+        }
+        
+        const item = toDelete[currentIndex];
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'index.php?action=certificate-delete&id=' + item.id;
+        form.style.display = 'none';
+        
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+        
+        document.body.appendChild(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form)
+        })
+        .then(() => {
+            deletedCount++;
+        })
+        .catch(error => {
+            console.error('Error deleting certificate:', error);
+            errorCount++;
+        })
+        .finally(() => {
+            form.remove();
+            currentIndex++;
+            
+            // Actualizar barra de progreso
+            const percentage = Math.round((currentIndex / totalItems) * 100);
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressBar').setAttribute('aria-valuenow', percentage);
+            document.getElementById('progressPercentage').textContent = percentage + '%';
+            document.getElementById('progressText').textContent = (deletedCount + errorCount) + ' / ' + totalItems;
+            
+            deleteNextItem();
+        });
+    };
+    
+    deleteNextItem();
+}
+</script>
 
 <!-- Modal de Historial de Liquidaciones -->
 <div class="modal fade" id="historicoLiquidacionModal" tabindex="-1">

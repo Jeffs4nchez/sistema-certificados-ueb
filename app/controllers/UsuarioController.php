@@ -58,7 +58,7 @@ class UsuarioController {
             PermisosHelper::denegarAcceso('Solo administradores pueden crear usuarios.');
         }
 
-        $tipos_usuario = ['admin', 'operador'];
+        $tipos_usuario = ['admin', 'operador', 'consultor'];
         include __DIR__ . '/../views/usuarios/form.php';
     }
 
@@ -139,7 +139,7 @@ class UsuarioController {
             return;
         }
 
-        $tipos_usuario = ['admin', 'operador'];
+        $tipos_usuario = ['admin', 'operador', 'consultor'];
         $editar = true;
         include __DIR__ . '/../views/usuarios/form.php';
     }

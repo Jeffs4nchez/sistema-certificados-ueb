@@ -185,14 +185,27 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación múltiple</h5>
+                <h5 class="modal-title" style="color: white;"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación múltiple</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>¿Estás seguro de que deseas eliminar los <strong id="confirmDeleteCount">0</strong> parámetros seleccionados?</p>
                 <p class="text-danger small"><i class="fas fa-info-circle"></i> Esta acción no se puede deshacer.</p>
+                
+                <!-- Barra de progreso (inicialmente oculta) -->
+                <div id="progressContainer" class="mt-4 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted">Eliminando parámetros...</span>
+                        <span id="progressText" class="small font-weight-bold">0 / 0</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span id="progressPercentage" class="small">0%</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" id="modalFooter">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-danger" onclick="confirmDeleteSelected()">Eliminar</button>
             </div>
@@ -416,15 +429,35 @@ function confirmDeleteSelected() {
     let deletedCount = 0;
     let errorCount = 0;
     let currentIndex = 0;
+    const totalItems = toDelete.length;
+    
+    // Mostrar barra de progreso y ocultar botones
+    document.getElementById('progressContainer').classList.remove('d-none');
+    document.getElementById('modalFooter').querySelectorAll('button').forEach(btn => {
+        if (btn.className.includes('btn-danger') || btn.className.includes('btn-secondary')) {
+            btn.disabled = true;
+        }
+    });
     
     const deleteNextItem = () => {
         if (currentIndex >= toDelete.length) {
             // Todos completados
-            if (deletedCount + errorCount === toDelete.length) {
-                setTimeout(() => {
-                    location.reload();
-                }, 500);
+            const progressText = document.getElementById('progressText');
+            progressText.textContent = deletedCount + ' / ' + totalItems;
+            
+            // Cambiar el color de la barra a verde si todo fue bien
+            if (errorCount === 0) {
+                document.getElementById('progressBar').classList.remove('progress-bar-striped', 'progress-bar-animated');
+                document.getElementById('progressBar').classList.add('bg-success');
+            } else {
+                document.getElementById('progressBar').classList.remove('progress-bar-striped', 'progress-bar-animated');
+                document.getElementById('progressBar').classList.add('bg-warning');
             }
+            
+            // Recargar después de 1.5 segundos
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
             return;
         }
         
@@ -457,15 +490,20 @@ function confirmDeleteSelected() {
         .finally(() => {
             form.remove();
             currentIndex++;
+            
+            // Actualizar barra de progreso
+            const percentage = Math.round((currentIndex / totalItems) * 100);
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressBar').setAttribute('aria-valuenow', percentage);
+            document.getElementById('progressPercentage').textContent = percentage + '%';
+            document.getElementById('progressText').textContent = (deletedCount + errorCount) + ' / ' + totalItems;
+            
             deleteNextItem(); // Llamar recursivamente para el siguiente
         });
     };
     
     // Iniciar el proceso
     deleteNextItem();
-    
-    // Cerrar modal
-    bootstrap.Modal.getInstance(document.getElementById('deleteMultipleModal')).hide();
 }
 </script>
 

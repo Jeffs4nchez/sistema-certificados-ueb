@@ -202,12 +202,26 @@
                     <a href="index.php?action=presupuesto-list" class="btn btn-outline-primary w-100 mb-2">
                         <i class="fas fa-arrow-left"></i> Volver a Lista
                     </a>
+                    
+                    <!-- Botones de Exportación: Admin, Operador y Consultor -->
+                    <?php if (isset($_SESSION['usuario_tipo']) && ($_SESSION['usuario_tipo'] === 'admin' || $_SESSION['usuario_tipo'] === 'operador' || $_SESSION['usuario_tipo'] === 'consultor')): ?>
+                    <a href="index.php?action=presupuesto-export-excel" class="btn btn-success w-100 mb-2">
+                        <i class="fas fa-file-csv"></i> Exportar CSV
+                    </a>
+                    <a href="index.php?action=presupuesto-export-pdf" class="btn btn-danger w-100 mb-2">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </a>
+                    <?php endif; ?>
+                    
+                    <!-- Solo Admin puede eliminar -->
+                    <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
                     <form method="POST" action="index.php?action=presupuesto-delete&id=<?php echo $item['id']; ?>" 
-                          onsubmit="return confirm('¿Estás seguro?');">
+                          onsubmit="return confirm('¿Estás seguro? Esta acción no se puede deshacer.');">
                         <button type="submit" class="btn btn-outline-danger w-100">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>
                     </form>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
