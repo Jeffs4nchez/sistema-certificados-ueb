@@ -1,22 +1,27 @@
 <?php
 /**
- * Vista: Lista de Certificados
+ * Vista: Lista de Certificados - Diseno Moderno 2026
  */
 ?>
 
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="display-5">Certificados</h1>
-            <p class="text-muted">Gestión de certificados del sistema</p>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="index.php?action=certificate-export" class="btn btn-success me-2">
-                <i class="fas fa-download"></i> Exportar Reporte
-            </a>
-            <a href="index.php?action=certificate-create" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Crear Certificado
-            </a>
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-text">
+                <h1 class="page-title">Certificados</h1>
+                <p class="page-subtitle">Gestion y seguimiento de certificados del sistema</p>
+            </div>
+            <div class="header-actions">
+                <a href="index.php?action=certificate-export" class="btn btn-success">
+                    <i class="fas fa-download"></i> 
+                    <span class="btn-text">Exportar</span>
+                </a>
+                <a href="index.php?action=certificate-create" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 
+                    <span class="btn-text">Nuevo Certificado</span>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -27,38 +32,35 @@
         </div>
     <?php endif; ?>
 
-    <!-- Formulario de Filtros -->
-    <div class="card shadow-sm border-0 mb-3">
-        <div class="card-header" style="background-color: #0B283F !important; color: white !important;">
-            <h6 class="mb-0" style="color: white !important;">
-                <i class="fas fa-filter"></i> Filtros
-                <button class="btn btn-sm btn-link float-end p-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" style="text-decoration: none; color: white;">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-            </h6>
+    <!-- Filtros Modernos -->
+    <div class="filters-card">
+        <div class="filters-header" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
+            <div class="filters-title">
+                <i class="fas fa-filter"></i>
+                <span>Filtros de busqueda</span>
+            </div>
+            <i class="fas fa-chevron-down filters-toggle"></i>
         </div>
         <div class="collapse show" id="filtrosCollapse">
-            <div class="card-body p-2">
-                <form method="GET" action="" class="row g-2">
+            <div class="filters-body">
+                <form method="GET" action="" class="filters-form">
                     <input type="hidden" name="action" value="certificate-list">
                     
-                    <!-- Búsqueda general -->
-                    <div class="col-md-2">
-                        <label for="search" class="form-label mb-1" style="font-size: 0.85rem;">
+                    <div class="filter-group">
+                        <label for="search" class="filter-label">
                             <i class="fas fa-search"></i> Buscar
                         </label>
-                        <input type="text" class="form-control form-control-sm" id="search" name="search" 
-                               placeholder="Número o inst." 
+                        <input type="text" class="form-control" id="search" name="search" 
+                               placeholder="Numero o institucion..." 
                                value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
                     </div>
                     
-                    <!-- Filtro por Usuario -->
-                    <div class="col-md-2">
-                        <label for="usuario" class="form-label mb-1" style="font-size: 0.85rem;">
+                    <div class="filter-group">
+                        <label for="usuario" class="filter-label">
                             <i class="fas fa-user"></i> Usuario
                         </label>
-                        <select class="form-select form-select-sm" id="usuario" name="usuario">
-                            <option value="">Todos</option>
+                        <select class="form-control" id="usuario" name="usuario">
+                            <option value="">Todos los usuarios</option>
                             <?php foreach ($usuarios_filtro as $usuario): ?>
                                 <option value="<?php echo htmlspecialchars($usuario); ?>" 
                                     <?php echo (($_GET['usuario'] ?? '') === $usuario) ? 'selected' : ''; ?>>
@@ -68,125 +70,127 @@
                         </select>
                     </div>
                     
-                    <!-- Filtro por Fecha -->
-                    <div class="col-md-2">
-                        <label for="fecha_desde" class="form-label mb-1" style="font-size: 0.85rem;">Desde</label>
-                        <input type="date" class="form-control form-control-sm" id="fecha_desde" name="fecha_desde" 
+                    <div class="filter-group">
+                        <label for="fecha_desde" class="filter-label">Desde</label>
+                        <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" 
                                value="<?php echo htmlspecialchars($_GET['fecha_desde'] ?? ''); ?>">
                     </div>
                     
-                    <div class="col-md-2">
-                        <label for="fecha_hasta" class="form-label mb-1" style="font-size: 0.85rem;">Hasta</label>
-                        <input type="date" class="form-control form-control-sm" id="fecha_hasta" name="fecha_hasta" 
+                    <div class="filter-group">
+                        <label for="fecha_hasta" class="filter-label">Hasta</label>
+                        <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" 
                                value="<?php echo htmlspecialchars($_GET['fecha_hasta'] ?? ''); ?>">
                     </div>
                     
-                    <!-- Filtro por Liquidación -->
-                    <div class="col-md-1">
-                        <label for="liquidacion" class="form-label mb-1" style="font-size: 0.85rem;">Liquidación</label>
-                        <select class="form-select form-select-sm" id="liquidacion" name="liquidacion">
+                    <div class="filter-group">
+                        <label for="liquidacion" class="filter-label">Estado</label>
+                        <select class="form-control" id="liquidacion" name="liquidacion">
                             <option value="">Todas</option>
-                            <option value="completa" <?php echo (($_GET['liquidacion'] ?? '') === 'completa') ? 'selected' : ''; ?>>
-                                Completa
-                            </option>
-                            <option value="parcial" <?php echo (($_GET['liquidacion'] ?? '') === 'parcial') ? 'selected' : ''; ?>>
-                                Parcial
-                            </option>
-                            <option value="sin_liquidar" <?php echo (($_GET['liquidacion'] ?? '') === 'sin_liquidar') ? 'selected' : ''; ?>>
-                                Sin liquidar
-                            </option>
+                            <option value="completa" <?php echo (($_GET['liquidacion'] ?? '') === 'completa') ? 'selected' : ''; ?>>Completa</option>
+                            <option value="parcial" <?php echo (($_GET['liquidacion'] ?? '') === 'parcial') ? 'selected' : ''; ?>>Parcial</option>
+                            <option value="sin_liquidar" <?php echo (($_GET['liquidacion'] ?? '') === 'sin_liquidar') ? 'selected' : ''; ?>>Sin liquidar</option>
                         </select>
                     </div>
                     
-                    <!-- Botones de acción -->
-                    <div class="col-md-3">
-                        <label class="form-label mb-1" style="font-size: 0.85rem;">&nbsp;</label>
-                        <div>
-                            <button type="submit" class="btn btn-sm btn-primary" style="font-size: 0.8rem;">
-                                <i class="fas fa-search"></i> Filtrar
-                            </button>
-                            <a href="?action=certificate-list" class="btn btn-sm btn-secondary" style="font-size: 0.8rem;">
-                                <i class="fas fa-redo"></i> Limpiar
-                            </a>
-                        </div>
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Aplicar
+                        </button>
+                        <a href="?action=certificate-list" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Limpiar
+                        </a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header" style="background-color: #0B283F !important; background: #0B283F !important; color: white !important;">
-            <h5 class="mb-0" style="color: white !important;"><i class="fas fa-table"></i> Lista de Certificados</h5>
+    <!-- Tabla de Certificados -->
+    <div class="data-card">
+        <div class="data-header">
+            <div class="data-title">
+                <i class="fas fa-certificate"></i>
+                <span>Lista de Certificados</span>
+            </div>
+            <span class="data-count"><?php echo count($certificates); ?> registros</span>
         </div>
-        <div class="card-body p-0">
+        <div class="data-body">
             <?php if (empty($certificates)): ?>
-                <div class="text-center py-5">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">
-                        No hay certificados.<br>
-                        <a href="index.php?action=certificate-create">Crea uno ahora</a>
-                    </p>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h4>No hay certificados</h4>
+                    <p>Aun no se han registrado certificados en el sistema</p>
+                    <a href="index.php?action=certificate-create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Crear primer certificado
+                    </a>
                 </div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead style="background-color: #0B283F !important; color: white !important;">
+                    <table class="table table-modern">
+                        <thead>
                             <tr>
                                 <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
-                                <th style="width: 50px; text-align: center;">
-                                    <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes(this)" style="cursor: pointer;">
+                                <th class="th-checkbox">
+                                    <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes(this)" class="form-check-input">
                                 </th>
                                 <?php endif; ?>
-                                <th style="width: 80px;">#</th>
-                                <th>Número Certificado</th>
-                                <th>Institución</th>
+                                <th class="th-id">#</th>
+                                <th>No. Certificado</th>
+                                <th>Institucion</th>
                                 <th>Usuario</th>
                                 <th>Fecha</th>
-                                <th>Monto Total</th>
-                                <th>Liquidado</th>
-                                <th>Pendiente</th>
-                                <th style="width: 150px;">Acciones</th>
+                                <th class="text-end">Monto Total</th>
+                                <th class="text-end">Liquidado</th>
+                                <th class="text-end">Pendiente</th>
+                                <th class="th-actions">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($certificates as $cert): ?>
                                 <tr>
                                     <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
-                                    <td style="text-align: center;">
-                                        <input type="checkbox" class="cert-checkbox" data-id="<?php echo $cert['id']; ?>" onchange="updateSelectedPanel()" style="cursor: pointer;">
+                                    <td class="td-checkbox">
+                                        <input type="checkbox" class="form-check-input cert-checkbox" data-id="<?php echo $cert['id']; ?>" onchange="updateSelectedPanel()">
                                     </td>
                                     <?php endif; ?>
-                                    <td class="text-muted small fw-bold"><?php echo htmlspecialchars($cert['id']); ?></td>
-                                    <td class="fw-bold"><?php echo htmlspecialchars($cert['numero_certificado'] ?? 'N/A'); ?></td>
-                                    <td><?php echo htmlspecialchars($cert['institucion'] ?? ''); ?></td>
-                                    <td><?php echo htmlspecialchars($cert['usuario_creacion'] ?? 'Sistema'); ?></td>
-                                    <td><?php echo date('d/m/Y', strtotime($cert['fecha_elaboracion'] ?? '2025-01-01')); ?></td>
-                                    <td class="text-end">$ <?php echo number_format($cert['monto_total'] ?? 0, 2, ',', '.'); ?></td>
-                                    <td class="text-end text-success fw-bold">$ <?php echo number_format($cert['total_liquidado'] ?? 0, 2, ',', '.'); ?></td>
-                                    <td class="text-end text-warning fw-bold">$ <?php echo number_format($cert['total_pendiente'] ?? 0, 2, ',', '.'); ?></td>
-                                    <td style="white-space: nowrap; vertical-align: middle;">
-                                        <a href="index.php?action=certificate-view&id=<?php echo $cert['id']; ?>" 
-                                           class="btn btn-sm btn-outline-primary" title="Ver" style="display: inline-block; margin: 2px;">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-outline-success" title="Liquidación"
-                                                onclick="openLiquidacionModal(<?php echo $cert['id']; ?>)" style="display: inline-block; margin: 2px;">
-                                            <i class="fas fa-file-invoice-dollar"></i>
-                                        </button>
-                                        <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" title="Editar"
-                                                onclick="openEditModal(<?php echo $cert['id']; ?>)" style="display: inline-block; margin: 2px;">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <form method="POST" action="index.php?action=certificate-delete&id=<?php echo $cert['id']; ?>" 
-                                              style="display: inline-block; margin: 2px;" 
-                                              onsubmit="return confirm('¿Estás seguro de eliminar este certificado?');">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
+                                    <td class="td-id"><?php echo htmlspecialchars($cert['id']); ?></td>
+                                    <td class="td-certificate">
+                                        <span class="certificate-number"><?php echo htmlspecialchars($cert['numero_certificado'] ?? 'N/A'); ?></span>
+                                    </td>
+                                    <td class="td-institution"><?php echo htmlspecialchars($cert['institucion'] ?? ''); ?></td>
+                                    <td class="td-user">
+                                        <span class="user-badge"><?php echo htmlspecialchars($cert['usuario_creacion'] ?? 'Sistema'); ?></span>
+                                    </td>
+                                    <td class="td-date"><?php echo date('d/m/Y', strtotime($cert['fecha_elaboracion'] ?? '2025-01-01')); ?></td>
+                                    <td class="td-amount">$<?php echo number_format($cert['monto_total'] ?? 0, 2, ',', '.'); ?></td>
+                                    <td class="td-amount success">$<?php echo number_format($cert['total_liquidado'] ?? 0, 2, ',', '.'); ?></td>
+                                    <td class="td-amount warning">$<?php echo number_format($cert['total_pendiente'] ?? 0, 2, ',', '.'); ?></td>
+                                    <td class="td-actions">
+                                        <div class="action-buttons">
+                                            <a href="index.php?action=certificate-view&id=<?php echo $cert['id']; ?>" 
+                                               class="action-btn view" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="action-btn liquidation" title="Liquidacion"
+                                                    onclick="openLiquidacionModal(<?php echo $cert['id']; ?>)">
+                                                <i class="fas fa-file-invoice-dollar"></i>
                                             </button>
-                                        </form>
-                                        <?php endif; ?>
+                                            <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
+                                            <button type="button" class="action-btn edit" title="Editar"
+                                                    onclick="openEditModal(<?php echo $cert['id']; ?>)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form method="POST" action="index.php?action=certificate-delete&id=<?php echo $cert['id']; ?>" 
+                                                  class="d-inline" 
+                                                  onsubmit="return confirm('Estas seguro de eliminar este certificado?');">
+                                                <button type="submit" class="action-btn delete" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -197,24 +201,430 @@
         </div>
     </div>
 
-    <!-- Panel de Eliminación Múltiple (solo para admin) -->
+    <!-- Panel de Seleccion Multiple (solo admin) -->
     <?php if (isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin'): ?>
-    <div id="selectedActionsPanel" class="card border-0 shadow-sm mt-3 d-none" style="background-color: #f8f9fa;">
-        <div class="card-body py-3 px-4">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <span class="badge bg-info me-2" id="selectedCount">0 seleccionados</span>
-                </div>
-                <div class="col-md-6 text-end">
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSelectedCertificates()" title="Eliminar seleccionados">
-                        <i class="fas fa-trash"></i> Eliminar seleccionados
-                    </button>
-                </div>
-            </div>
+    <div id="selectedActionsPanel" class="selection-panel d-none">
+        <div class="selection-content">
+            <span class="selection-count">
+                <i class="fas fa-check-circle"></i>
+                <span id="selectedCount">0 seleccionados</span>
+            </span>
+            <button type="button" class="btn btn-danger btn-sm" onclick="deleteSelectedCertificates()">
+                <i class="fas fa-trash"></i> Eliminar seleccionados
+            </button>
         </div>
     </div>
     <?php endif; ?>
 </div>
+
+<style>
+    /* Page Container */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Page Header */
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--azul-1);
+        margin-bottom: 0.25rem;
+        letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+        font-size: 0.9375rem;
+        color: var(--texto-secundario);
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .header-actions .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    @media (max-width: 576px) {
+        .header-actions .btn-text {
+            display: none;
+        }
+    }
+
+    /* Filters Card */
+    .filters-card {
+        background: white;
+        border-radius: 14px;
+        border: 1px solid var(--gris-3);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .filters-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, var(--azul-1) 0%, var(--azul-2) 100%);
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .filters-title {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .filters-toggle {
+        transition: transform 0.3s ease;
+    }
+
+    .filters-header[aria-expanded="false"] .filters-toggle {
+        transform: rotate(-180deg);
+    }
+
+    .filters-body {
+        padding: 1.25rem;
+    }
+
+    .filters-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+
+    .filter-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--texto-secundario);
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .filter-label i {
+        color: var(--azul-1);
+        font-size: 0.6875rem;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+
+    /* Data Card */
+    .data-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gris-3);
+        overflow: hidden;
+    }
+
+    .data-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, var(--azul-1) 0%, var(--azul-2) 100%);
+        color: white;
+    }
+
+    .data-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .data-count {
+        font-size: 0.8125rem;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.375rem 0.875rem;
+        border-radius: 20px;
+    }
+
+    .data-body {
+        padding: 0;
+    }
+
+    /* Modern Table */
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .table-modern thead th {
+        background: linear-gradient(135deg, var(--azul-1) 0%, var(--azul-2) 100%);
+        color: white;
+        padding: 0.875rem 1rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .table-modern tbody tr {
+        border-bottom: 1px solid var(--gris-3);
+        transition: all 0.15s ease;
+    }
+
+    .table-modern tbody tr:hover {
+        background: linear-gradient(90deg, rgba(11, 40, 63, 0.02) 0%, rgba(11, 40, 63, 0.05) 100%);
+    }
+
+    .table-modern tbody td {
+        padding: 0.875rem 1rem;
+        vertical-align: middle;
+    }
+
+    .th-checkbox, .td-checkbox {
+        width: 48px;
+        text-align: center;
+    }
+
+    .th-id, .td-id {
+        width: 60px;
+        color: var(--gris-5);
+        font-weight: 600;
+        font-size: 0.8125rem;
+    }
+
+    .th-actions {
+        width: 160px;
+    }
+
+    .certificate-number {
+        font-weight: 700;
+        color: var(--azul-1);
+    }
+
+    .user-badge {
+        display: inline-block;
+        padding: 0.25rem 0.625rem;
+        background: rgba(11, 40, 63, 0.08);
+        color: var(--azul-1);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .td-date {
+        color: var(--texto-secundario);
+        font-size: 0.8125rem;
+    }
+
+    .td-amount {
+        text-align: right;
+        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.875rem;
+    }
+
+    .td-amount.success {
+        color: #059669;
+    }
+
+    .td-amount.warning {
+        color: #D97706;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.375rem;
+        justify-content: flex-end;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1.5px solid;
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+    }
+
+    .action-btn.view {
+        border-color: var(--azul-1);
+        color: var(--azul-1);
+    }
+
+    .action-btn.view:hover {
+        background: var(--azul-1);
+        color: white;
+    }
+
+    .action-btn.liquidation {
+        border-color: #10B981;
+        color: #059669;
+    }
+
+    .action-btn.liquidation:hover {
+        background: #10B981;
+        color: white;
+    }
+
+    .action-btn.edit {
+        border-color: var(--gris-4);
+        color: var(--gris-5);
+    }
+
+    .action-btn.edit:hover {
+        background: var(--gris-5);
+        color: white;
+    }
+
+    .action-btn.delete {
+        border-color: var(--rojo-1);
+        color: var(--rojo-1);
+    }
+
+    .action-btn.delete:hover {
+        background: var(--rojo-1);
+        color: white;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, rgba(11, 40, 63, 0.05) 0%, rgba(11, 40, 63, 0.1) 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+
+    .empty-icon i {
+        font-size: 2rem;
+        color: var(--azul-1);
+    }
+
+    .empty-state h4 {
+        font-size: 1.25rem;
+        color: var(--texto-principal);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: var(--texto-secundario);
+        margin-bottom: 1.5rem;
+    }
+
+    /* Selection Panel */
+    .selection-panel {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--azul-1);
+        border-radius: 12px;
+        padding: 0.875rem 1.25rem;
+        box-shadow: 0 8px 30px rgba(11, 40, 63, 0.3);
+        z-index: 100;
+        animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    .selection-content {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .selection-count {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .selection-count i {
+        color: #10B981;
+    }
+
+    @media (max-width: 768px) {
+        .filters-form {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .filter-actions {
+            grid-column: span 2;
+            justify-content: flex-start;
+        }
+
+        .table-modern {
+            font-size: 0.8125rem;
+        }
+
+        .table-modern thead th,
+        .table-modern tbody td {
+            padding: 0.625rem 0.5rem;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            font-size: 0.75rem;
+        }
+    }
+</style>
 
 <!-- Modal de confirmación para borrado múltiple -->
 <div class="modal fade" id="deleteMultipleModal" tabindex="-1" aria-hidden="true">
